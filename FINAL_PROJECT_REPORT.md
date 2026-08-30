@@ -6,7 +6,7 @@
 
 | Resource | Details / URL |
 |---|---|
-| **GitHub Repository** | [https://github.com/kcharithreddy/Contour-Pond-Catchment-API](https://github.com/kcharithreddy/Contour-Pond-Catchment-API) |
+| **GitHub Repository** | [https://github.com/kcharithreddy/Contour_Map_Planning](https://github.com/kcharithreddy/Contour_Map_Planning) |
 | **Working API Endpoint** | `http://10.1.75.51:3000/analyzeContour` |
 | **Alternative Port Endpoint** | `http://10.1.75.51:3245/analyzeContour` |
 | **Health Check URL** | `http://10.1.75.51:3000/health` |
