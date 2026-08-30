@@ -1,0 +1,106 @@
+{
+  "info": {
+    "name": "Contour-Based Pond Catchment Analysis API",
+    "description": "Postman Collection for Contour-Based Pond Catchment Analysis API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://10.1.75.51:3000/health",
+          "protocol": "http",
+          "host": [
+            "10",
+            "1",
+            "75",
+            "51"
+          ],
+          "port": "3000",
+          "path": [
+            "health"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Health status is ok', function () {",
+              "    pm.expect(pm.response.json().status).to.eql('ok');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analyze Contour (Upload KML)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "contours_1m (1).kml"
+            },
+            {
+              "key": "resolution_m",
+              "value": "10.0",
+              "type": "text"
+            },
+            {
+              "key": "min_catchment_area_m2",
+              "value": "500.0",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://10.1.75.51:3000/analyzeContour",
+          "protocol": "http",
+          "host": [
+            "10",
+            "1",
+            "75",
+            "51"
+          ],
+          "port": "3000",
+          "path": [
+            "analyzeContour"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status code is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Response contains pond_site and catchment', function () {",
+              "    const jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('pond_site');",
+              "    pm.expect(jsonData).to.have.property('catchment');",
+              "    pm.expect(jsonData.catchment.area_m2).to.be.at.least(500);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}
