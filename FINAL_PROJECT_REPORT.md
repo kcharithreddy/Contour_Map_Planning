@@ -78,9 +78,9 @@ Submitting `contours_1m (1).kml` to `POST http://10.1.75.51:3000/analyzeContour`
 
 ## 5. Evaluation Matrix
 
-| Criteria | Assessment | Implementation Details |
-|---|---|---|
-| **Working API Endpoint** | **PASS (10/10)** | Deployed and verified on port 3000 (`http://10.1.75.51:3000/analyzeContour`). Managed by an endless supervisor daemon. |
-| **Catchment Identification & Estimation** | **PASS (10/10)** | Accurate D8 flow accumulation and Priority-Flood depression filling algorithm. Computes area (1.66 ha), cell counts, relief, slope statistics, and valid GeoJSON boundary polygons. |
-| **Code Extensibility for Future Phases** | **PASS (10/10)** | Modular micro-architecture (`parser.py`, `dem.py`, `terrain.py`, `pond.py`, `schemas.py`). Readily extensible for Phase 2 runoff modeling, volumetric storage estimations, and multi-pond ranking. |
-| **Documentation & Quality** | **PASS (10/10)** | OpenAPI 3.0 interactive Swagger UI (`/docs`), automated pytest test suite (`test_golden.py`), Postman Collection (`postman_collection.json`), and comprehensive submission report. |
+| Criteria | Implementation Details |
+|---|---|
+| **Working API Endpoint** | Deployed and verified on port 3000 and 3245 (`http://10.1.75.51:3245/analyzeContour`). Managed by an endless supervisor daemon. |
+| **Catchment Identification & Estimation** | Accurate D8 flow accumulation and Priority-Flood depression filling algorithm. Computes area (1.66 ha), cell counts, relief, slope statistics, and valid GeoJSON boundary polygons. |
+| **Code Extensibility for Future Phases** | Modular micro-architecture (`parser.py`, `dem.py`, `terrain.py`, `pond.py`, `schemas.py`). Readily extensible for Phase 2 runoff modeling, volumetric storage estimations, and multi-pond ranking. |
+| **Documentation & Quality** | OpenAPI 3.0 interactive Swagger UI (`/docs`), automated pytest test suite (`test_golden.py`), Postman Collection (`postman_collection.json`), and comprehensive submission report. |

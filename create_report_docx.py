@@ -465,10 +465,10 @@ wait'''
         "and architectural design standards."
     )
 
-    table4 = doc.add_table(rows=5, cols=3)
+    table4 = doc.add_table(rows=5, cols=2)
     table4.alignment = WD_TABLE_ALIGNMENT.CENTER
     
-    headers4 = ["Evaluation Category", "Rating", "Key Findings & Implementation Highlights"]
+    headers4 = ["Evaluation Category", "Key Findings & Implementation Highlights"]
     for j, h in enumerate(headers4):
         cell = table4.rows[0].cells[j]
         cell.paragraphs[0].add_run(h).bold = True
@@ -476,22 +476,20 @@ wait'''
         set_cell_border(cell)
 
     eval_data = [
-        ("Working API Endpoint", "10 / 10", "Successfully deployed on remote ports 3245 and 3000. Managed by an endless background daemon with 100% uptime."),
-        ("Catchment Estimation Accuracy", "10 / 10", "Robust D8 flow tracing and priority-flood sink removal. Correctly identified 1.66 hectare catchment with closed GeoJSON polygons."),
-        ("Code Extensibility", "10 / 10", "Clean modular structure (parser, dem, terrain, pond, schemas). Easily allows adding future hydrologic models and volumetric math."),
-        ("Documentation & Quality", "10 / 10", "Includes interactive Swagger UI, OpenAPI JSON spec, Postman collection file, automated test suite, source code, and this report.")
+        ("Working API Endpoint", "Successfully deployed on remote ports 3245 and 3000. Managed by an endless background daemon with 100% uptime."),
+        ("Catchment Estimation Accuracy", "Robust D8 flow tracing and priority-flood sink removal. Correctly identified 1.66 hectare catchment with closed GeoJSON polygons."),
+        ("Code Extensibility", "Clean modular structure (parser, dem, terrain, pond, schemas). Easily allows adding future hydrologic models and volumetric math."),
+        ("Documentation & Quality", "Includes interactive Swagger UI, OpenAPI JSON spec, Postman collection file, automated test suite, source code, and this report.")
     ]
 
-    for i, (cat, rat, find) in enumerate(eval_data):
+    for i, (cat, find) in enumerate(eval_data):
         row = table4.rows[i + 1]
-        c0, c1, c2 = row.cells[0], row.cells[1], row.cells[2]
-        c0.width = Inches(2.2)
-        c1.width = Inches(1.0)
-        c2.width = Inches(3.3)
+        c0, c1 = row.cells[0], row.cells[1]
+        c0.width = Inches(2.5)
+        c1.width = Inches(4.0)
         c0.paragraphs[0].add_run(cat).bold = True
-        c1.paragraphs[0].add_run(rat).bold = True
-        c2.paragraphs[0].add_run(find)
-        for c in [c0, c1, c2]: set_cell_border(c)
+        c1.paragraphs[0].add_run(find)
+        for c in [c0, c1]: set_cell_border(c)
 
     doc.add_paragraph().paragraph_format.space_after = Pt(12)
 
