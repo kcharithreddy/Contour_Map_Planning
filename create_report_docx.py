@@ -516,13 +516,7 @@ wait'''
     )
 
     cite_p = doc.add_paragraph()
-    cite_run = cite_p.add_run(
-        "Artificial Intelligence Tool Citation:\n"
-        "• AI Assistant: Antigravity AI (Developed by Google DeepMind)\n"
-        "• Model Architecture: Gemini 3.6 Flash / Sonnet Coding Assistant\n"
-        "• Purpose of Utilization: Pair programming assistance, algorithmic refinement of D8 flow accumulation "
-        "logic, generation of automated Pytest regression test suites, remote deployment automation, and report formatting."
-    )
+    cite_run = cite_p.add_run("I used claude in some places")
     cite_run.italic = True
 
     # Save to file
