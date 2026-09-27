@@ -967,11 +967,15 @@ In compliance with the assignment's LLM and AI Tool Usage Policy:
 </ul>
 
 <!-- ================= APPENDIX ================= -->
-<h2>Appendix A. Source Code, Repository & Deployment</h2>
+<h2>Appendix A. Source Code, Video Demonstration & Deployment</h2>
 <p class="no-indent">
-The complete, version-controlled source code for this project is publicly hosted on GitHub:
+The complete, version-controlled source code, video demonstration, and deployment for this project are publicly available:
 <br>
-<strong>Repository URL: </strong> <a href="https://github.com/kcharithreddy/Contour_Map_Planning">https://github.com/kcharithreddy/Contour_Map_Planning</a>
+<strong>GitHub Repository: </strong> <a href="https://github.com/kcharithreddy/Contour_Map_Planning">https://github.com/kcharithreddy/Contour_Map_Planning</a>
+<br>
+<strong>Video Demonstration Playlist: </strong> <a href="https://www.youtube.com/playlist?list=PLAHMqE-Hy_PY">https://www.youtube.com/playlist?list=PLAHMqE-Hy_PY</a>
+<br>
+<strong>Live Deployment (Lab VM): </strong> <a href="http://10.1.75.51:3245/">http://10.1.75.51:3245/</a>
 </p>
 
 <h3>A.1 Project Directory Structure</h3>

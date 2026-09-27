@@ -10,6 +10,7 @@
 | Deliverable | URL / Information |
 |---|---|
 | **GitHub Repository** | `https://github.com/kcharithreddy/Contour_Map_Planning` |
+| **YouTube Video Demo Link** | `https://www.youtube.com/playlist?list=PLAHMqE-Hy_PY` |
 | **Working Front-End URL (Remote)** | `http://10.1.75.51:3245/` |
 | **Alternative Front-End Port** | `http://10.1.75.51:3000/` |
 | **Local Working Front-End URL** | `http://localhost:3245/` |
