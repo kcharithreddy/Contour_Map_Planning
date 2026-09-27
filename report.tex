@@ -2,13 +2,15 @@
 %% CSD Assignment 1 - Final Technical Report
 %% Based on the ACM "acmart" manuscript (single-column) style.
 %%
-\documentclass[manuscript,screen]{acmart}
+\documentclass[manuscript,screen,review]{acmart}
 
 \usepackage{booktabs}
 \usepackage{subcaption}
 \usepackage{amsmath}
 \usepackage{listings}
 \usepackage{microtype}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit}
 
 \AtBeginDocument{%
   \providecommand\BibTeX{{Bib\TeX}}}
@@ -42,7 +44,7 @@
 
 %% =================== ABSTRACT ======================================
 \begin{abstract}
-Efficient rainwater harvesting in rural topography is heavily constrained by the high cost and latency of manual civil land surveys, as well as the absence of localized hydrological modeling tools. In this project, we design, implement, and evaluate an automated, memory-efficient \emph{AI-Based Village Pond Planning and Catchment Analysis System} engineered to operate reliably on resource-constrained compute nodes (512\,MB RAM, 1 vCPU, 1.5\,GB disk). The system provides a pure-Python hydrological processing pipeline that consumes raw 3D contour maps (KML/KMZ), transforms geographic coordinates to metric Universal Transverse Mercator projections (UTM Zone 44N), constructs regularized Digital Elevation Model (DEM) rasters via irregular scattered interpolation, eliminates artificial sinks using priority-flood depression filling, and computes D8 steepest-descent flow direction routing. The delineated watershed catchment is paired with dynamically queried precipitation data from the Open-Meteo Historical Archive to estimate harvestable runoff volume using the Rational Runoff formula ($V = P \times A \times C$) and dimension an engineered trapezoidal farm pond. An interactive Web GIS front-end built on Leaflet.js provides dual satellite/street basemaps, click-and-drag bounding box land selection with real-time dimension telemetry HUD, strict contour boundary clamping, and GeoJSON overlays of the watershed boundary and animated pond outlet pin. Evaluated on a 6.7\,MB survey dataset comprising 2,710 contour lines across 8.3\,km$^2$ in Chhattisgarh, the system identifies an optimal pond site at $21.2444^\circ\text{ N}, 81.2910^\circ\text{ E}$, yielding a 1.56\,ha catchment and $7,612.8\,\text{m}^3$ annual water harvest in 1.2\,seconds. A resilient multi-port supervisor daemon ensures fault-tolerant operation across distributed nodes, validated by a comprehensive 31-test automated verification suite.
+Efficient rainwater harvesting in rural topography is heavily constrained by the high cost and latency of manual civil land surveys, as well as the absence of localized hydrological modeling tools. In this project, we design, implement, and evaluate an automated, memory-efficient \emph{AI-Based Village Pond Planning and Catchment Analysis System} engineered to operate reliably on resource-constrained compute nodes (512\,MB RAM, 1 vCPU, 1.5\,GB disk). The system provides a pure-Python hydrological processing pipeline that consumes raw 3D contour maps (KML/KMZ), transforms geographic coordinates to metric Universal Transverse Mercator projections (UTM Zone 44N), constructs regularized Digital Elevation Model (DEM) rasters via irregular scattered interpolation, eliminates artificial sinks using priority-flood depression filling, and computes D8 steepest-descent flow direction routing. The delineated watershed catchment is paired with dynamically queried precipitation data from the Open-Meteo Historical Archive to estimate harvestable runoff volume using the Rational Runoff formula ($V = P \times A \times C$) and dimension an engineered trapezoidal farm pond. An interactive Web GIS front-end built on Leaflet.js provides dual satellite/street basemaps, click-and-drag bounding box land selection with real-time dimension telemetry HUD, strict contour boundary clamping, and GeoJSON overlays of the watershed boundary and animated pond outlet pin. Evaluated on a 6.7\,MB survey dataset comprising 2,710 contour lines across 8.3\,km$^2$ in Chhattisgarh, the system identifies an optimal pond site at $21.2444^\circ\text{ N}, 81.2910^\circ\text{ E}$, yielding a 1.56\,ha catchment and $7,612.8\,\text{m}^3$ annual water harvest in 1.2\,seconds. A resilient multi-port supervisor daemon ensures fault-tolerant operation across distributed nodes, validated by a comprehensive 33-test automated verification suite.
 \end{abstract}
 
 \keywords{Village Pond Planning, Digital Elevation Model (DEM), D8 Flow Routing, Watershed Catchment Delineation, Rainwater Harvesting, Web GIS, FastAPI}
@@ -117,6 +119,7 @@ To guarantee production stability on rural edge infrastructure, we established s
     \item \textbf{Fault Tolerance \& Availability:} The API must maintain continuous availability. A background supervisor daemon must monitor processes and automatically recover failed workers within 2\,seconds.
     \item \textbf{Portability \& Zero Build-Tooling:} The front-end must be served directly as native vanilla HTML5/ES6/CSS without requiring Node.js, npm, or heavy build bundlers.
     \item \textbf{Boundary Safety \& Clamping:} Selections outside the provided contour map boundary or smaller than 50\,m $\times$ 50\,m must be rejected with helpful error diagnostics.
+    \item \textbf{Security \& Network Isolation:} The system is designed for internal and trusted-network deployment with no authentication or authorization layer implemented. Production deployment exposed to the public internet would require API-key or session-based access control, TLS termination, and rate limiting prior to internet exposure.
 \end{enumerate}
 
 %% =====================================================================
@@ -126,43 +129,61 @@ The application is structured as a decoupled, modular monolith following clean a
 
 \begin{figure*}[ht]
 \centering
-\begin{verbatim}
-+-----------------------------------------------------------------------------------------+
-|                                1. PRESENTATION LAYER                                    |
-|   Leaflet.js Web GIS  |  Esri Satellite / Carto Basemaps  |  Drag Land Area Selector    |
-|   Real-Time HUD (Dimensions/Area)  |  Catchment GeoJSON Overlay  |  Pulsing Pond Marker |
-+--------------------------------------------+--------------------------------------------+
-                                             | HTTP JSON / REST API
-                                             v
-+-----------------------------------------------------------------------------------------+
-|                                 2. APPLICATION LAYER                                    |
-|                      FastAPI Asynchronous Web Framework (Uvicorn)                       |
-|   GET / (Web UI)  |  GET /api/dataset-bounds  |  POST /analyzeArea  |  POST /analyzeContour|
-|   Bounds Clamping & Validation  |  CORS Middleware  |  Multi-Port Supervisor (3245/3000)|
-+--------------------------------------------+--------------------------------------------+
-                                             |
-                                             v
-+-----------------------------------------------------------------------------------------+
-|                           3. HYDROLOGICAL PROCESSING ENGINE                             |
-|  +--------------------+   +-------------------+   +------------------+   +------------+ |
-|  | Parser (lxml stream|-->| DEM (PyProj UTM   |-->| Terrain (Sink    |-->| Pond &     | |
-|  | & Bounding Clip)   |   | & SciPy Griddata) |   | Fill, D8 Routing)|   | Catchment) | |
-|  +--------------------+   +-------------------+   +------------------+   +-----+------+ |
-|                                                                                |        |
-|                                                                                v        |
-|                                                +--------------------------------------+ |
-|                                                | Hydrology Engine (Runoff & Sizing)   | |
-|                                                | V = P x A x C | Trapezoidal Pond Dim | |
-|                                                +--------------------------------------+ |
-+--------------------------------------------+--------------------------------------------+
-                                             |
-                                             v
-+-----------------------------------------------------------------------------------------+
-|                                 4. DATA & CACHE LAYER                                   |
-|   Preloaded Contour Dataset Cache (In-Memory)  |  Open-Meteo Archive API (Precipitation)|
-|   Static GIS GeoJSON Serializer                |  Local Agrometeorology Regional Baseline|
-+-----------------------------------------------------------------------------------------+
-\end{verbatim}
+\begin{tikzpicture}[
+    node distance=0.45cm and 0.3cm,
+    layerbox/.style={draw=black!70, fill=blue!4, rounded corners=3pt, line width=0.7pt, align=center, inner sep=5pt},
+    compbox/.style={draw=black!60, fill=white, rounded corners=2pt, font=\scriptsize, align=center, inner sep=3.5pt, line width=0.5pt},
+    pipebox/.style={draw=teal!70, fill=teal!6, rounded corners=2pt, font=\tiny\bfseries, align=center, inner sep=2.5pt, line width=0.5pt},
+    arr/.style={-{Stealth[length=2.2mm]}, thick, color=black!75},
+    pipearr/.style={-{Stealth[length=1.8mm]}, semithick, color=teal!80}
+]
+
+% Layer 1: Presentation
+\node[layerbox, minimum width=0.92\textwidth] (l1) {
+    \textbf{1. PRESENTATION LAYER (Leaflet.js Web GIS)}\\
+    \vspace{1pt}
+    \textsf{Esri Satellite \& OpenStreetMap Basemaps \enspace$\vert$\enspace Drag Bounding Box Tool \enspace$\vert$\enspace Real-Time Dimensions HUD}\\
+    \textsf{Watershed Catchment GeoJSON Overlay \enspace$\vert$\enspace Pulsing Pond Outlet Marker \enspace$\vert$\enspace GeoJSON Export}
+};
+
+% Layer 2: Application
+\node[layerbox, minimum width=0.92\textwidth, below=0.45cm of l1] (l2) {
+    \textbf{2. APPLICATION LAYER (FastAPI \& Uvicorn)}\\
+    \vspace{1pt}
+    \textsf{\texttt{GET /} (UI) \enspace$\vert$\enspace \texttt{GET /api/dataset-bounds} \enspace$\vert$\enspace \texttt{POST /analyzeArea} \enspace$\vert$\enspace \texttt{POST /analyzeContour}}\\
+    \textsf{Pydantic v2 Contract Validation \enspace$\vert$\enspace Boundary Clamping \enspace$\vert$\enspace Process Redundancy Workers (Ports 3245 \& 3000)}
+};
+
+% Layer 3: Hydrological Processing Engine
+\node[layerbox, minimum width=0.92\textwidth, below=0.45cm of l2] (l3) {
+    \textbf{3. HYDROLOGICAL PROCESSING ENGINE (NumPy, SciPy, Shapely, PyProj)}\\
+    \vspace{2pt}
+    \begin{tikzpicture}[node distance=0.2cm]
+        \node[pipebox] (p1) {Parser (\texttt{lxml})\\Stream \& Clip};
+        \node[pipebox, right=of p1] (p2) {DEM Grid\\PyProj + SciPy};
+        \node[pipebox, right=of p2] (p3) {Terrain Engine\\Priority-Flood + D8};
+        \node[pipebox, right=of p3] (p4) {Pond \& Catchment\\Depression + Queue};
+        \node[pipebox, right=of p4] (p5) {Hydrology Engine\\$V = P \times A \times C$};
+        \draw[pipearr] (p1) -- (p2);
+        \draw[pipearr] (p2) -- (p3);
+        \draw[pipearr] (p3) -- (p4);
+        \draw[pipearr] (p4) -- (p5);
+    \end{tikzpicture}
+};
+
+% Layer 4: Data & Cache
+\node[layerbox, minimum width=0.92\textwidth, below=0.45cm of l3] (l4) {
+    \textbf{4. DATA \& CACHE LAYER}\\
+    \vspace{1pt}
+    \textsf{In-Memory \texttt{ContourDataset} \& Bounds Cache ($\sim 45$\,MB) \enspace$\vert$\enspace Open-Meteo Historical Archive API \enspace$\vert$\enspace Agrometeorological Baseline}
+};
+
+% Inter-layer arrows
+\draw[arr] (l1) -- node[right, font=\tiny\bfseries] {HTTP JSON / REST} (l2);
+\draw[arr] (l2) -- (l3);
+\draw[arr] (l3) -- (l4);
+
+\end{tikzpicture}
 \caption{End-to-end layered system architecture of the AI Pond Planning System.}
 \label{fig:architecture}
 \end{figure*}
@@ -293,6 +314,7 @@ The web interface features a full-screen Leaflet.js canvas integrated with a gla
     \item \textbf{Hydrological Control Sliders:} Sliders for Runoff Coefficient ($C$) and DEM Resolution allow instant re-calculation.
     \item \textbf{Export Engine:} A one-click button exports the entire result set as a standard GeoJSON \texttt{FeatureCollection}.
 \end{itemize}
+Figure~\ref{fig:dashboard_overview} illustrates the full Web GIS dashboard overview with telemetry cards and boundary overlays, while Figure~\ref{fig:catchment_zoom} shows a high-resolution zoom of the delineated watershed boundary and pond placement marker.
 
 \begin{figure*}[ht]
 \centering
@@ -325,7 +347,7 @@ The project incorporates multiple fundamental principles of Computer Systems Des
     \textbf{CSD Theme / Topic} & \textbf{Where used in the project} & \textbf{Justification / Engineering Design Rationale} \\
     \midrule
     \textbf{REST API Design} & FastAPI endpoints (\texttt{/analyzeArea}, \texttt{/analyzeContour}, \texttt{/health}) & Standardized HTTP verb semantics, clear Pydantic request/response contracts, and automatic OpenAPI 3.0 schema generation. \\
-    \textbf{Load Balancing} & Dual supervisor daemon ports (3245 and 3000) & Enables horizontal scaling behind an Nginx or HAProxy reverse proxy across the 4 student systems to handle concurrent requests. \\
+    \textbf{Process Redundancy / Failover} & Dual supervisor daemon ports (3245 and 3000) & Runs two independent Uvicorn workers on ports 3245 and 3000 under a background supervisor daemon that automatically restarts any failed worker within 2 seconds, ensuring continuous service availability without requiring external load balancers or proxy layers. \\
     \textbf{In-Memory Caching} & Startup caching of \texttt{ContourDataset} and dataset bounds & Eliminates redundant 6.7\,MB XML disk I/O and parsing overhead, reducing sub-area query latency from 8.5\,s to 1.2\,s. \\
     \textbf{Spatial Indexing \& Clipping} & \texttt{filter\_dataset\_by\_bounds} in \texttt{app/parser.py} & Filters polylines to user bounding box prior to DEM interpolation, reducing grid size by up to $85\%$ and speeding up flow routing. \\
     \textbf{Concurrency \& Async I/O} & FastAPI async request handlers and non-blocking file streaming & Prevents blocking the event loop during large multi-part file uploads and concurrent client map interactions. \\
@@ -335,7 +357,7 @@ The project incorporates multiple fundamental principles of Computer Systems Des
     \textbf{Process Supervision \& Daemon} & POSIX \texttt{setsid} background supervisor script (\texttt{start\_daemon.sh}) & Ensures high availability; detached background execution independent of SSH sessions, auto-restarting crashed workers in 2\,s. \\
     \textbf{Error Handling \& Resilience} & Graceful weather fallback and bounds validation & Falls back to regional precipitation baseline if Open-Meteo is unreachable; returns informative HTTP 400 diagnostics for invalid selections. \\
     \textbf{Algorithmic Complexity} & Priority-Flood ($O(N \log N)$), D8 flow routing ($O(N)$), reverse queue ($O(K)$) & Selected near-linear time graph traversal algorithms over expensive quadratic distance matrices, ensuring sub-second execution. \\
-    \textbf{Automated Testing Strategy} & 31-test pytest suite (\texttt{tests/test\_*.py}) & Validates unit, integration, boundary rejection, and golden numerical benchmarks, guaranteeing regression safety. \\
+    \textbf{Automated Testing Strategy} & 33-test pytest suite (\texttt{tests/test\_*.py}) & Validates unit, integration, boundary rejection, and golden numerical benchmarks, guaranteeing regression safety. \\
     \textbf{Version Control \& CI/CD} & Git repository synced with GitHub remote (\texttt{main} branch) & Version-controlled codebase enabling multi-environment deployment via SSH automation scripts (\texttt{deploy.py}). \\
     \bottomrule
   \end{tabular}
@@ -389,7 +411,7 @@ Performance was benchmarked under stress on a Linux VM limited to 512\,MB RAM an
 \begin{itemize}
     \item \textbf{Peak Memory Footprint:} 168\,MB RSS during Delaunay scattered interpolation; 82\,MB steady-state. Zero out-of-memory errors occurred across 100 consecutive requests.
     \item \textbf{Sub-Area Selection Latency:} Average response time of $1,215\,\text{ms}$, representing a $75\%$ reduction in processing time compared to full-map queries.
-    \item \textbf{Automated Test Coverage:} 31 automated tests executed via \texttt{pytest} completed in 24.67\,seconds with a $100\%$ pass rate, covering API contracts, DEM coarsening, depression filling, D8 slope vectors, boundary rejections, and minimum-area limits.
+    \item \textbf{Automated Test Coverage:} 33 automated tests executed via \texttt{pytest} completed in 23.33\,seconds with a $100\%$ pass rate, covering API contracts, DEM coarsening, depression filling, D8 slope vectors, boundary rejections, and minimum-area limits.
 \end{itemize}
 
 %% =====================================================================
