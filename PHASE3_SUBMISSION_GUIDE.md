@@ -1,7 +1,7 @@
 # Phase 3: VIVA & Demo Submission Guide
 **CS559: Computer Systems Design — Assignment 1**
 **Project:** AI-Based Village Pond Planning & Catchment Analysis System
-**Author:** Kakarla Soma Charith Reddy | IIT Bhilai
+**Author:** Kakarla Soma Charith Reddy | Student ID: 12341040 | Email: kakarlac@iitbhilai.ac.in | IIT Bhilai
 
 ---
 
