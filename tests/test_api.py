@@ -124,3 +124,30 @@ def test_analyze_contour_corrupt_file():
     response = client.post("/analyzeContour", files=files)
     assert response.status_code == 400
     assert "Invalid or unparseable contour file" in response.json()["detail"]
+
+
+def test_analyze_area_outside_bounds():
+    """Verify 400 error when selection is completely outside the contour region."""
+    payload = {
+        "min_lat": 28.500,  # Delhi latitude (outside Chhattisgarh)
+        "min_lon": 77.200,
+        "max_lat": 28.510,
+        "max_lon": 77.210
+    }
+    response = client.post("/analyzeArea", json=payload)
+    assert response.status_code == 400
+    assert "outside the valid contour region" in response.json()["detail"]
+
+
+def test_analyze_area_too_small():
+    """Verify 400 error when selection is smaller than 50m x 50m."""
+    payload = {
+        "min_lat": 21.24400,
+        "min_lon": 81.29100,
+        "max_lat": 21.24405,  # ~5 meters difference
+        "max_lon": 81.29105
+    }
+    response = client.post("/analyzeArea", json=payload)
+    assert response.status_code == 400
+    assert "too small" in response.json()["detail"]
+

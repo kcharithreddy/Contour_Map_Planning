@@ -74,9 +74,21 @@ def main():
     print("\n=== Connecting to remote server ===")
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(HOST, port=PORT, username=USER, password=PASSWORD,
-                timeout=15, banner_timeout=15)
-    print(f"Connected to {USER}@{HOST}:{PORT}")
+    connected = False
+    for attempt in range(1, 6):
+        try:
+            print(f"Connecting to {USER}@{HOST}:{PORT} (attempt {attempt}/5)...")
+            ssh.connect(HOST, port=PORT, username=USER, password=PASSWORD,
+                        timeout=15, banner_timeout=15)
+            connected = True
+            print(f"Connected to {USER}@{HOST}:{PORT}")
+            break
+        except Exception as e:
+            print(f"  Attempt {attempt} failed: {e}")
+            import time; time.sleep(2)
+
+    if not connected:
+        raise RuntimeError("Failed to connect to remote server after 5 attempts.")
 
     sftp = ssh.open_sftp()
 

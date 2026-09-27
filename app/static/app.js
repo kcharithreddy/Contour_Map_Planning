@@ -135,16 +135,24 @@ async function fetchDatasetBounds() {
         const bounds = L.latLngBounds(southWest, northEast);
         map.fitBounds(bounds, { padding: [50, 50] });
 
-        // Add subtle boundary outline of available village dataset
-        L.rectangle(bounds, {
-            color: '#38bdf8',
-            weight: 1.5,
-            dashArray: '4, 6',
-            fill: false,
-            opacity: 0.5
+        // Add prominent, styled boundary outline of available village dataset
+        const regionRect = L.rectangle(bounds, {
+            color: '#10b981',
+            weight: 2.5,
+            dashArray: '6, 6',
+            fillColor: '#10b981',
+            fillOpacity: 0.04
         }).addTo(map);
 
-        setStatus('idle', `Village dataset loaded (${data.total_contours} contours)`);
+        regionRect.bindTooltip(
+            `<strong>📍 Contour Region Extent</strong><br>Area: ~8.3 km² | ${data.total_contours} Contours<br><em>Draw within this boundary</em>`,
+            { permanent: false, direction: 'top', className: 'region-tooltip' }
+        );
+
+        // Constrain map panning to prevent wandering outside the region
+        map.setMaxBounds(bounds.pad(0.4));
+
+        setStatus('idle', `Village dataset loaded (${data.total_contours} contours) • Min: 50m×50m, Max: Full Region`);
     } catch (e) {
         console.warn('Could not load preloaded bounds:', e);
     }
@@ -170,7 +178,7 @@ function startDrawingMode() {
     map.dragging.disable();
     map.getContainer().style.cursor = 'crosshair';
     dom.mapToast.classList.remove('hidden');
-    dom.toastText.textContent = 'Click and drag on the map to define the land boundary';
+    dom.toastText.textContent = 'Drag on map to select land (Min: 50m × 50m | Inside green boundary)';
     setStatus('busy', 'Drawing custom land selection...');
 }
 
@@ -207,6 +215,31 @@ function onMapMouseMove(e) {
     const currentLatLng = e.latlng;
     const bounds = L.latLngBounds(state.drawStartLatLng, currentLatLng);
     state.dragRect.setBounds(bounds);
+
+    // Calculate live dimensions
+    const min_lat = bounds.getSouth();
+    const max_lat = bounds.getNorth();
+    const min_lon = bounds.getWest();
+    const max_lon = bounds.getEast();
+    const midLatRad = ((min_lat + max_lat) / 2.0) * (Math.PI / 180.0);
+    const width_m = Math.round((max_lon - min_lon) * 111320.0 * Math.cos(midLatRad));
+    const height_m = Math.round((max_lat - min_lat) * 110540.0);
+    const area_ha = ((width_m * height_m) / 10000.0).toFixed(1);
+
+    // Live validation feedback
+    const b = state.datasetBounds;
+    const isOutside = b && (max_lat <= b.min_lat || min_lat >= b.max_lat || max_lon <= b.min_lon || min_lon >= b.max_lon);
+
+    if (isOutside) {
+        dom.toastText.textContent = `⚠️ Outside contour region! (${width_m}m × ${height_m}m)`;
+        state.dragRect.setStyle({ color: '#ef4444', fillColor: '#ef4444' });
+    } else if (width_m < 50 || height_m < 50) {
+        dom.toastText.textContent = `📐 ${width_m}m × ${height_m}m (${area_ha} ha) — Too small (Min: 50m × 50m)`;
+        state.dragRect.setStyle({ color: '#f59e0b', fillColor: '#f59e0b' });
+    } else {
+        dom.toastText.textContent = `📐 ${width_m}m × ${height_m}m (${area_ha} ha) — Valid selection`;
+        state.dragRect.setStyle({ color: '#10b981', fillColor: '#10b981' });
+    }
 }
 
 function onMapMouseUp(e) {
@@ -218,15 +251,78 @@ function onMapMouseUp(e) {
     const min_lon = bounds.getWest();
     const max_lon = bounds.getEast();
 
-    // Check if drawn box is meaningful (> 10 meters)
-    if (Math.abs(max_lat - min_lat) < 0.0001 || Math.abs(max_lon - min_lon) < 0.0001) {
+    const midLatRad = ((min_lat + max_lat) / 2.0) * (Math.PI / 180.0);
+    const width_m = (max_lon - min_lon) * 111320.0 * Math.cos(midLatRad);
+    const height_m = (max_lat - min_lat) * 110540.0;
+    const area_m2 = width_m * height_m;
+
+    // 1. Enforce Region Boundary: Must overlap the available contour region
+    const b = state.datasetBounds;
+    if (b) {
+        const isCompletelyOutside = (
+            max_lat <= b.min_lat || min_lat >= b.max_lat ||
+            max_lon <= b.min_lon || min_lon >= b.max_lon
+        );
+
+        if (isCompletelyOutside) {
+            alert(
+                `Selection Rejected: Outside Contour Region\n\n` +
+                `The selected area has no contour data.\n` +
+                `Please select land inside the marked green village boundary:\n` +
+                `• Latitude:  ${b.min_lat.toFixed(4)}° to ${b.max_lat.toFixed(4)}°\n` +
+                `• Longitude: ${b.min_lon.toFixed(4)}° to ${b.max_lon.toFixed(4)}°`
+            );
+            if (state.dragRect) map.removeLayer(state.dragRect);
+            stopDrawingMode();
+            return;
+        }
+    }
+
+    // 2. Enforce Minimum Limit (50m x 50m or 2,500 m2)
+    if (width_m < 50 || height_m < 50 || area_m2 < 2500) {
+        alert(
+            `Selection Rejected: Area Too Small\n\n` +
+            `Your selection is ${Math.round(width_m)}m × ${Math.round(height_m)}m (~${Math.round(area_m2).toLocaleString()} m²).\n` +
+            `Minimum allowable selection is 50m × 50m (2,500 m² = 0.25 ha).\n\n` +
+            `Please drag a larger land area for reliable hydrological catchment modeling.`
+        );
         if (state.dragRect) map.removeLayer(state.dragRect);
         stopDrawingMode();
         return;
     }
 
+    // 3. Enforce Maximum Limit (12 km2)
+    if (area_m2 > 12000000) {
+        alert(
+            `Selection Rejected: Area Too Large\n\n` +
+            `Your selection is ${(area_m2 / 1000000).toFixed(1)} km².\n` +
+            `Maximum allowable selection is 12 km² (full village extent).`
+        );
+        if (state.dragRect) map.removeLayer(state.dragRect);
+        stopDrawingMode();
+        return;
+    }
+
+    // 4. Cleanly clamp selection to contour dataset boundary if edges spill over
+    let clamped_min_lat = min_lat;
+    let clamped_max_lat = max_lat;
+    let clamped_min_lon = min_lon;
+    let clamped_max_lon = max_lon;
+
+    if (b) {
+        clamped_min_lat = Math.max(min_lat, b.min_lat);
+        clamped_max_lat = Math.min(max_lat, b.max_lat);
+        clamped_min_lon = Math.max(min_lon, b.min_lon);
+        clamped_max_lon = Math.min(max_lon, b.max_lon);
+    }
+
     stopDrawingMode();
-    runAreaAnalysis({ min_lat, min_lon, max_lat, max_lon });
+    runAreaAnalysis({
+        min_lat: clamped_min_lat,
+        min_lon: clamped_min_lon,
+        max_lat: clamped_max_lat,
+        max_lon: clamped_max_lon
+    });
 }
 
 // ── Run Analysis for Selected Land Area ──

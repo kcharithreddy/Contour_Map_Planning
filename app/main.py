@@ -1,5 +1,6 @@
 import os
 import time
+import math
 import tempfile
 import logging
 from typing import Optional
@@ -130,32 +131,69 @@ async def analyze_selected_area(req: AnalyzeAreaRequest):
     crops the contour dataset, executes hydrological routing and catchment delineation,
     and returns suggested pond location, catchment metrics, and expected harvestable water volume.
     """
-    global CACHED_DATASET
-    if CACHED_DATASET is None:
+    global CACHED_DATASET, CACHED_BOUNDS
+    if CACHED_DATASET is None or CACHED_BOUNDS is None:
         load_default_dataset()
-    if CACHED_DATASET is None:
+    if CACHED_DATASET is None or CACHED_BOUNDS is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Default contour dataset is not available for area clipping."
         )
 
-    # Validate bounding box
+    # Validate basic bounding box format
     if req.min_lat >= req.max_lat or req.min_lon >= req.max_lon:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid bounding box: min_lat/min_lon must be strictly less than max_lat/max_lon."
         )
 
+    # 1. Enforce Contour Region Boundary: Check overlap with valid contour dataset
+    b = CACHED_BOUNDS
+    if (req.max_lat <= b["min_lat"] or req.min_lat >= b["max_lat"] or
+        req.max_lon <= b["min_lon"] or req.min_lon >= b["max_lon"]):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Selected land area is completely outside the valid contour region (Lat: {b['min_lat']:.4f}°–{b['max_lat']:.4f}°, Lon: {b['min_lon']:.4f}°–{b['max_lon']:.4f}°). Please select an area within the village contour boundaries."
+        )
+
+    # Clamp selection box to the valid contour boundary
+    clamped_min_lat = max(req.min_lat, b["min_lat"])
+    clamped_max_lat = min(req.max_lat, b["max_lat"])
+    clamped_min_lon = max(req.min_lon, b["min_lon"])
+    clamped_max_lon = min(req.max_lon, b["max_lon"])
+
+    # 2. Enforce Minimum and Maximum selection size limits
+    lat_mid_rad = math.radians((clamped_min_lat + clamped_max_lat) / 2.0)
+    width_m = (clamped_max_lon - clamped_min_lon) * 111320.0 * math.cos(lat_mid_rad)
+    height_m = (clamped_max_lat - clamped_min_lat) * 110540.0
+    approx_area_m2 = width_m * height_m
+
+    MIN_DIM_M = 50.0          # Minimum 50 meters dimension
+    MIN_AREA_M2 = 2500.0      # Minimum 2,500 m² (0.25 hectares)
+    MAX_AREA_M2 = 12000000.0  # Maximum 12 km² (covers entire village extent)
+
+    if width_m < MIN_DIM_M or height_m < MIN_DIM_M or approx_area_m2 < MIN_AREA_M2:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Selected land area is too small ({width_m:.0f}m × {height_m:.0f}m, ~{approx_area_m2:.0f} m²). Minimum allowed selection is 50m × 50m (2,500 m²)."
+        )
+
+    if approx_area_m2 > MAX_AREA_M2:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Selected land area is too large (~{approx_area_m2/1e6:.1f} km²). Maximum allowed selection is 12 km² (full village extent)."
+        )
+
     start_time = time.time()
 
     try:
-        # 1. Filter polylines to selected area
+        # 1. Filter polylines to selected (clamped) area
         sub_dataset = filter_dataset_by_bounds(
             CACHED_DATASET,
-            min_lon=req.min_lon,
-            min_lat=req.min_lat,
-            max_lon=req.max_lon,
-            max_lat=req.max_lat
+            min_lon=clamped_min_lon,
+            min_lat=clamped_min_lat,
+            max_lon=clamped_max_lon,
+            max_lat=clamped_max_lat
         )
 
         # 2. Build DEM grid
