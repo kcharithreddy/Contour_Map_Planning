@@ -175,3 +175,86 @@ def parse_contour_file(file_path: str) -> ContourDataset:
         max_elevation=max_elev,
         contour_interval=contour_interval
     )
+
+
+def get_dataset_bounds(dataset: ContourDataset) -> Tuple[float, float, float, float]:
+    """
+    Returns (min_lon, min_lat, max_lon, max_lat) for the dataset.
+    """
+    if not dataset.polylines:
+        raise ValueError("ContourDataset contains no polylines")
+
+    min_lon = float('inf')
+    max_lon = float('-inf')
+    min_lat = float('inf')
+    max_lat = float('-inf')
+
+    for poly in dataset.polylines:
+        for lon, lat in poly.points:
+            if lon < min_lon: min_lon = lon
+            if lon > max_lon: max_lon = lon
+            if lat < min_lat: min_lat = lat
+            if lat > max_lat: max_lat = lat
+
+    return min_lon, min_lat, max_lon, max_lat
+
+
+def filter_dataset_by_bounds(
+    dataset: ContourDataset,
+    min_lon: float,
+    min_lat: float,
+    max_lon: float,
+    max_lat: float,
+    buffer_ratio: float = 0.08
+) -> ContourDataset:
+    """
+    Clips and filters a ContourDataset to only include contour geometry within
+    [min_lon, min_lat, max_lon, max_lat] with a margin buffer for DEM edge consistency.
+    """
+    d_lon = max_lon - min_lon
+    d_lat = max_lat - min_lat
+    buf_lon = max(0.0001, d_lon * buffer_ratio)
+    buf_lat = max(0.0001, d_lat * buffer_ratio)
+
+    b_min_lon = min_lon - buf_lon
+    b_max_lon = max_lon + buf_lon
+    b_min_lat = min_lat - buf_lat
+    b_max_lat = max_lat + buf_lat
+
+    filtered_polylines: List[Polyline] = []
+
+    for poly in dataset.polylines:
+        # Segment points that lie inside the buffered box
+        current_segment = []
+        for lon, lat in poly.points:
+            if b_min_lon <= lon <= b_max_lon and b_min_lat <= lat <= b_max_lat:
+                current_segment.append((lon, lat))
+            else:
+                if len(current_segment) >= 2:
+                    filtered_polylines.append(Polyline(elevation=poly.elevation, points=current_segment))
+                current_segment = []
+        if len(current_segment) >= 2:
+            filtered_polylines.append(Polyline(elevation=poly.elevation, points=current_segment))
+
+    if not filtered_polylines:
+        raise ValueError("No contour lines found inside the selected bounding box. Please select an area overlapping the contour map.")
+
+    elevations = sorted(list({p.elevation for p in filtered_polylines}))
+    min_elev = min(elevations)
+    max_elev = max(elevations)
+
+    interval = dataset.contour_interval
+    if len(elevations) > 1:
+        diffs = [round(elevations[i+1] - elevations[i], 4) for i in range(len(elevations)-1)]
+        pos = [d for d in diffs if d > 0]
+        if pos:
+            pos.sort()
+            interval = pos[len(pos) // 2]
+
+    return ContourDataset(
+        polylines=filtered_polylines,
+        min_elevation=min_elev,
+        max_elevation=max_elev,
+        contour_interval=interval
+    )
+

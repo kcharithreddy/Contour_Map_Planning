@@ -27,7 +27,7 @@ def golden_response():
 
     with open(SAMPLE_KML_PATH, "rb") as f:
         files = {
-            "file": (os.path.basename(SAMPLE_KML_PATH), f,
+            "contour_map": (os.path.basename(SAMPLE_KML_PATH), f,
                      "application/vnd.google-earth.kml+xml")
         }
         data = {"resolution_m": "10.0", "min_catchment_area_m2": "500.0"}
@@ -208,7 +208,7 @@ def test_tc09_coarser_resolution():
 
     with open(SAMPLE_KML_PATH, "rb") as f:
         files = {
-            "file": (os.path.basename(SAMPLE_KML_PATH), f,
+            "contour_map": (os.path.basename(SAMPLE_KML_PATH), f,
                      "application/vnd.google-earth.kml+xml")
         }
         data = {"resolution_m": "20.0", "min_catchment_area_m2": "500.0"}
@@ -241,7 +241,7 @@ def test_tc10_larger_min_area():
 
     with open(SAMPLE_KML_PATH, "rb") as f:
         files = {
-            "file": (os.path.basename(SAMPLE_KML_PATH), f,
+            "contour_map": (os.path.basename(SAMPLE_KML_PATH), f,
                      "application/vnd.google-earth.kml+xml")
         }
         data = {"resolution_m": "10.0", "min_catchment_area_m2": str(min_area)}
@@ -259,7 +259,7 @@ def test_tc10_larger_min_area():
 
 def test_tc11_invalid_extension():
     """TC-11: Uploading a .txt file returns HTTP 400 with correct error message."""
-    files = {"file": ("test.txt", b"dummy content", "text/plain")}
+    files = {"contour_map": ("test.txt", b"dummy content", "text/plain")}
     response = client.post("/analyzeContour", files=files)
 
     assert response.status_code == 400
@@ -273,7 +273,7 @@ def test_tc11_invalid_extension():
 def test_tc12_corrupt_kml():
     """TC-12: Uploading a .kml file with non-XML content returns HTTP 400."""
     files = {
-        "file": ("corrupt.kml", b"This is not XML at all",
+        "contour_map": ("corrupt.kml", b"This is not XML at all",
                  "application/vnd.google-earth.kml+xml")
     }
     response = client.post("/analyzeContour", files=files)

@@ -22,6 +22,7 @@ INCLUDE_PATHS = [
     "tests",
     "requirements.txt",
     "contours_1m (1).kml",
+    "start_daemon.sh",
 ]
 EXCLUDE_DIRS = {".venv", "__pycache__", ".pytest_cache", ".git"}
 
@@ -90,43 +91,45 @@ def main():
     run(ssh, f"tar -xzf {remote_tar} -C {REMOTE_DIR}")
     run(ssh, f"rm -f {remote_tar}")
 
-    print("\n=== Setting up Python venv ===")
-    run(ssh, f"python3 -m venv {REMOTE_DIR}/.venv")
-    run(ssh, f"{REMOTE_DIR}/.venv/bin/pip install --upgrade pip -q")
-    run(ssh, f"{REMOTE_DIR}/.venv/bin/pip install -r {REMOTE_DIR}/requirements.txt -q")
+    print("\n=== Setting up Python packages on server ===")
+    run(ssh, f"pip3 install --break-system-packages -r {REMOTE_DIR}/requirements.txt -q || pip install --break-system-packages -r {REMOTE_DIR}/requirements.txt -q", check=False)
 
     print("\n=== Checking disk usage ===")
     run(ssh, f"du -sh {REMOTE_DIR}/.venv", check=False)
 
-    print("\n=== Stopping any old instance ===")
-    run(ssh, "pkill -f 'uvicorn app.main' || true", check=False)
+    print("\n=== Stopping any old instances ===")
+    run(ssh, "pkill -9 -f 'uvicorn app.main' || true", check=False)
+    run(ssh, "pkill -9 -f 'start_daemon.sh' || true", check=False)
 
-    print("\n=== Starting server ===")
+    print("\n=== Starting background supervisor daemon ===")
+    run(ssh, f"chmod +x {REMOTE_DIR}/start_daemon.sh")
     start_cmd = (
         f"cd {REMOTE_DIR} && "
-        f"nohup {REMOTE_DIR}/.venv/bin/uvicorn app.main:app "
-        f"--host 0.0.0.0 --port 8000 --workers 1 "
-        f"> {REMOTE_DIR}/uvicorn.log 2>&1 &"
+        f"nohup ./start_daemon.sh </dev/null >/dev/null 2>&1 &"
     )
     run(ssh, start_cmd)
 
-    import time; time.sleep(2)
+    import time; time.sleep(3)
 
     print("\n=== Smoke test: GET /health ===")
-    out = run(ssh, "curl -s http://127.0.0.1:8000/health", check=False)
+    out = run(ssh, "curl -s http://127.0.0.1:3245/health", check=False)
+    print("Health response:", out)
+
     if '"ok"' in out:
         print("\n✅ Server is UP and healthy!")
     else:
         print("\n⚠️  Health check response unexpected — check the log:")
-        run(ssh, f"tail -30 {REMOTE_DIR}/uvicorn.log", check=False)
+        run(ssh, f"tail -30 {REMOTE_DIR}/uvicorn_3245.log", check=False)
 
     sftp.close()
     ssh.close()
 
     print(f"\n=== Done! ===")
-    print(f"API is running on the server at: http://{HOST}:8000")
-    print(f"Swagger UI:                       http://{HOST}:8000/docs")
-    print(f"Logs:                             {REMOTE_DIR}/uvicorn.log")
+    print(f"Front-end & API running on server at: http://{HOST}:3245")
+    print(f"Alternative Port:                     http://{HOST}:3000")
+    print(f"Interactive Swagger Docs:             http://{HOST}:3245/docs")
+    print(f"Logs:                                 {REMOTE_DIR}/uvicorn_3245.log")
+
 
 
 if __name__ == "__main__":

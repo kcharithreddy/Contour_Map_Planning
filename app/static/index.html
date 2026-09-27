@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Pond Planner — Contour-Based Catchment & Water Harvesting System</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Header Bar -->
+        <header class="top-nav">
+            <div class="brand">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="brand-title">AI Pond Planner <span class="badge">Phase 3</span></h1>
+                    <p class="brand-subtitle">CS559 System Design • Automated Village Water Harvesting</p>
+                </div>
+            </div>
+
+            <div class="nav-controls">
+                <button id="btn-draw-area" class="btn btn-primary" title="Drag a rectangle on the map to select custom land area">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    <span>Select Land Area</span>
+                </button>
+                <button id="btn-full-area" class="btn btn-secondary" title="Analyze the entire preloaded village extent">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                    <span>Full Village Area</span>
+                </button>
+                <button id="btn-upload-modal" class="btn btn-secondary" title="Upload custom KML/KMZ contour file">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                    <span>Upload KML</span>
+                </button>
+                <button id="btn-clear" class="btn btn-outline" title="Clear current selection and overlays">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+            <!-- Map Container -->
+            <div id="map-container" class="map-wrapper">
+                <div id="map"></div>
+
+                <!-- Map Overlay Prompt / Status Toast -->
+                <div id="map-toast" class="map-toast hidden">
+                    <span id="toast-text">Click and drag to select a land boundary on the map</span>
+                    <button id="toast-cancel" class="toast-close">&times;</button>
+                </div>
+
+                <!-- Basemap Switcher -->
+                <div class="basemap-toggle">
+                    <button id="btn-layer-sat" class="btn-tile active" title="Satellite Imagery">Satellite</button>
+                    <button id="btn-layer-osm" class="btn-tile" title="Standard Street Map">Carto</button>
+                </div>
+
+                <!-- Loading Spinner Overlay -->
+                <div id="loading-overlay" class="loading-overlay hidden">
+                    <div class="spinner-card">
+                        <div class="spinner"></div>
+                        <div class="spinner-text">Delineating Catchment & Modeling Runoff...</div>
+                        <div class="spinner-subtext">Executing D8 flow routing across DEM grid</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Floating Analytics Sidebar / Dashboard -->
+            <aside class="dashboard-panel">
+                <!-- System Status Header -->
+                <div class="panel-section status-bar">
+                    <div class="status-indicator">
+                        <span id="status-dot" class="dot dot-idle"></span>
+                        <span id="status-label">Ready for Land Selection</span>
+                    </div>
+                    <span id="perf-time" class="perf-badge">0 ms</span>
+                </div>
+
+                <!-- Interactive Parameters Accordion -->
+                <div class="panel-section config-section">
+                    <div class="section-title">
+                        <span>Hydrological Parameters</span>
+                        <span class="badge-subtle">Configurable</span>
+                    </div>
+                    <div class="config-grid">
+                        <div class="config-item">
+                            <label for="input-runoff-c">
+                                <span>Runoff Coeff (C)</span>
+                                <span id="val-runoff-c" class="val-tag">0.40</span>
+                            </label>
+                            <input type="range" id="input-runoff-c" min="0.10" max="0.80" step="0.05" value="0.40">
+                            <span class="help-text">Agricultural loam soil (0.35–0.50)</span>
+                        </div>
+                        <div class="config-item">
+                            <label for="input-res-m">
+                                <span>DEM Resolution</span>
+                                <span id="val-res-m" class="val-tag">10 m</span>
+                            </label>
+                            <input type="range" id="input-res-m" min="5" max="25" step="5" value="10">
+                            <span class="help-text">Spatial raster grid granularity</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Primary KPI Metrics -->
+                <div class="panel-section kpi-section">
+                    <div class="section-title">Analysis Results</div>
+
+                    <!-- Water Volume Highlight Card -->
+                    <div class="kpi-card highlight-blue">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Expected Water Volume</span>
+                            <div class="kpi-icon water-icon">💧</div>
+                        </div>
+                        <div class="kpi-value-row">
+                            <span id="kpi-volume-m3" class="kpi-main-val">—</span>
+                            <span class="kpi-unit">m³</span>
+                        </div>
+                        <div class="kpi-sub-row">
+                            <span>Equivalent:</span>
+                            <strong id="kpi-volume-liters">—</strong> Liters
+                        </div>
+                        <div class="kpi-formula-bar">
+                            <code>Runoff = P(1.22m) × Catchment × C(0.4)</code>
+                        </div>
+                    </div>
+
+                    <!-- Catchment Area Card -->
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Catchment Area</span>
+                            <div class="kpi-icon">🏞️</div>
+                        </div>
+                        <div class="kpi-value-row">
+                            <span id="kpi-catchment-area" class="kpi-main-val">—</span>
+                            <span class="kpi-unit">m²</span>
+                        </div>
+                        <div class="kpi-sub-row">
+                            <span>Harvesting surface:</span>
+                            <strong id="kpi-catchment-ha">—</strong> ha
+                        </div>
+                    </div>
+
+                    <!-- Suggested Pond Location Card -->
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Suggested Pond Site</span>
+                            <div class="kpi-icon">📍</div>
+                        </div>
+                        <div class="location-details">
+                            <div class="loc-item">
+                                <span class="loc-lbl">Latitude</span>
+                                <span id="kpi-pond-lat" class="loc-val font-mono">—</span>
+                            </div>
+                            <div class="loc-item">
+                                <span class="loc-lbl">Longitude</span>
+                                <span id="kpi-pond-lon" class="loc-val font-mono">—</span>
+                            </div>
+                            <div class="loc-item">
+                                <span class="loc-lbl">Outlet Elevation</span>
+                                <span id="kpi-pond-elev" class="loc-val font-mono">—</span>
+                            </div>
+                            <div class="loc-item">
+                                <span class="loc-lbl">Draining Cells</span>
+                                <span id="kpi-pond-cells" class="loc-val font-mono">—</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pond Sizing Recommendations -->
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Engineered Pond Sizing</span>
+                            <div class="kpi-icon">📐</div>
+                        </div>
+                        <div class="specs-grid">
+                            <div class="spec-box">
+                                <span class="spec-label">Rec. Depth</span>
+                                <span id="kpi-pond-depth" class="spec-value">—</span>
+                            </div>
+                            <div class="spec-box">
+                                <span class="spec-label">Surface Area</span>
+                                <span id="kpi-pond-surface" class="spec-value">—</span>
+                            </div>
+                            <div class="spec-box">
+                                <span class="spec-label">Capacity</span>
+                                <span id="kpi-pond-capacity" class="spec-value">—</span>
+                            </div>
+                            <div class="spec-box">
+                                <span class="spec-label">Side Slope</span>
+                                <span id="kpi-pond-slope" class="spec-value">1.5:1</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Terrain & Slope Metrics -->
+                    <div class="kpi-card">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Terrain Characteristics</span>
+                            <div class="kpi-icon">⛰️</div>
+                        </div>
+                        <div class="specs-grid">
+                            <div class="spec-box">
+                                <span class="spec-label">Mean Slope</span>
+                                <span id="kpi-mean-slope" class="spec-value">—</span>
+                            </div>
+                            <div class="spec-box">
+                                <span class="spec-label">Max Slope</span>
+                                <span id="kpi-max-slope" class="spec-value">—</span>
+                            </div>
+                            <div class="spec-box">
+                                <span class="spec-label">Relief (Range)</span>
+                                <span id="kpi-relief" class="spec-value">—</span>
+                            </div>
+                            <div class="spec-box">
+                                <span class="spec-label">Rainfall (Year)</span>
+                                <span id="kpi-rainfall" class="spec-value">1220 mm</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export & Actions -->
+                <div class="panel-section footer-actions">
+                    <button id="btn-export-geojson" class="btn btn-outline full-width" disabled>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                        <span>Download Catchment GeoJSON</span>
+                    </button>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Upload KML Modal -->
+    <div id="upload-modal" class="modal-backdrop hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Upload Custom Contour File</h3>
+                <button id="btn-close-modal" class="toast-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="drop-zone" class="drop-zone">
+                    <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                    </svg>
+                    <p class="drop-text">Drag & drop your <strong>.kml</strong> or <strong>.kmz</strong> contour file</p>
+                    <p class="drop-subtext">Supports vector 3D contour lines with elevation attributes</p>
+                    <input type="file" id="file-input" accept=".kml,.kmz" class="hidden-input">
+                    <button id="btn-browse" class="btn btn-secondary mt-2">Browse Computer</button>
+                </div>
+                <div id="selected-file-info" class="file-info hidden">
+                    <span id="selected-filename">filename.kml</span>
+                    <button id="btn-submit-upload" class="btn btn-primary">Process File</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="/static/app.js"></script>
+</body>
+</html>
