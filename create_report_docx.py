@@ -307,19 +307,23 @@ def create_report():
     )
 
     # Snippet 1: API Endpoint (app/main.py)
-    code_main = '''@app.post("/analyzeContour", response_model=ContourAnalysisResponse)
+    code_main = '''@app.post("/analyzeContour", response_model=AnalyzeContourResponse)
 async def analyze_contour(
-    file: UploadFile = File(...),
-    resolution_m: float = Form(10.0),
-    min_catchment_area_m2: float = Form(500.0)
+    contour_map: UploadFile = File(default=None, description="KML/KMZ contour file upload."),
+    file: UploadFile = File(default=None, description="Legacy alias for contour_map."),
+    resolution_m: float = Form(default=10.0),
+    min_catchment_area_m2: float = Form(default=500.0)
 ):
-    start_time = time.time()
-    ext = os.path.splitext(file.filename)[1].lower()
+    upload_file = contour_map or file
+    if upload_file is None:
+        raise HTTPException(status_code=422, detail="Missing required file field 'contour_map'.")
+    filename = upload_file.filename or "uploaded_file.kml"
+    ext = os.path.splitext(filename)[1].lower()
     if ext not in [".kml", ".kmz"]:
-        raise HTTPException(status_code=400, detail=f"Unsupported file extension: '{ext}'")
+        raise HTTPException(status_code=400, detail="Unsupported file extension.")
 
-    contents = await file.read()
-    contours, min_elev, max_elev, contour_interval = parse_contour_file(contents, file.filename)
+    contents = await upload_file.read()
+    contours, min_elev, max_elev, contour_interval = parse_contour_file(contents, filename)
     dem, transform, auto_adj = build_dem(contours, resolution_m=resolution_m)
     filled_dem = fill_depressions_priority_flood(dem)
     flow_dir = compute_d8_flow_direction(filled_dem)
@@ -421,7 +425,7 @@ wait'''
         set_cell_border(cell)
 
     params_data = [
-        ("file", "UploadFile", "Yes", "The .kml or .kmz vector file containing 3D topographical contour polylines."),
+        ("contour_map", "UploadFile", "Yes", "The .kml or .kmz vector file containing 3D topographical contour polylines (also supports 'file' as legacy alias)."),
         ("resolution_m", "float", "No (Default: 10.0)", "Target spatial grid cell size in meters for Digital Elevation Model creation."),
         ("min_catchment_area_m2", "float", "No (Default: 500.0)", "Minimum required upstream catchment area threshold in square meters.")
     ]

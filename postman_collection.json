@@ -51,7 +51,7 @@
           "mode": "formdata",
           "formdata": [
             {
-              "key": "file",
+              "key": "contour_map",
               "type": "file",
               "src": "contours_1m (1).kml"
             },
