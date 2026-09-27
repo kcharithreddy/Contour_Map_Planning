@@ -106,8 +106,8 @@ def main():
     print("\n=== Setting up Python packages on server ===")
     run(ssh, f"pip3 install --break-system-packages -r {REMOTE_DIR}/requirements.txt -q || pip install --break-system-packages -r {REMOTE_DIR}/requirements.txt -q", check=False)
 
-    print("\n=== Checking disk usage ===")
-    run(ssh, f"du -sh {REMOTE_DIR}/.venv", check=False)
+    print("\n=== Removing broken .venv if present ===")
+    run(ssh, f"rm -rf {REMOTE_DIR}/.venv", check=False)
 
     print("\n=== Stopping any old instances ===")
     run(ssh, "pkill -9 -f 'uvicorn app.main' || true", check=False)
@@ -115,13 +115,12 @@ def main():
 
     print("\n=== Starting background supervisor daemon ===")
     run(ssh, f"chmod +x {REMOTE_DIR}/start_daemon.sh")
-    start_cmd = (
-        f"cd {REMOTE_DIR} && "
-        f"nohup ./start_daemon.sh </dev/null >/dev/null 2>&1 &"
-    )
-    run(ssh, start_cmd)
+    chan = ssh.get_transport().open_session()
+    chan.exec_command(f"cd {REMOTE_DIR} && ( setsid ./start_daemon.sh </dev/null >/dev/null 2>&1 & )")
+    chan.close()
 
-    import time; time.sleep(3)
+    print("Daemon launched. Waiting 6 seconds for Uvicorn initialization...")
+    import time; time.sleep(6)
 
     print("\n=== Smoke test: GET /health ===")
     out = run(ssh, "curl -s http://127.0.0.1:3245/health", check=False)
