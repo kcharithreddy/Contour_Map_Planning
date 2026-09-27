@@ -255,6 +255,27 @@
     color: #333;
   }
 
+  .figure-img-box {
+    margin: 14pt 0;
+    text-align: center;
+    page-break-inside: avoid;
+  }
+  .figure-img-box img {
+    max-width: 98%;
+    height: auto;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+  .figure-caption {
+    font-size: 8.5pt;
+    font-weight: bold;
+    color: #333;
+    margin-top: 6pt;
+    text-align: center;
+    line-height: 1.35;
+  }
+
   /* References */
   .references ol {
     padding-left: 18pt;
@@ -711,7 +732,7 @@ The backend service is implemented in FastAPI. Endpoints are strictly typed with
 The web interface features a full-screen Leaflet.js canvas integrated with a glassmorphic sidebar dashboard:
 </p>
 <ul>
-  <li><strong>Basemap Toggle:</strong> Seamless switching between high-resolution Esri World Imagery (Satellite) and CartoDB Voyager.</li>
+  <li><strong>Basemap Toggle:</strong> Seamless switching between high-resolution Esri World Imagery (Satellite) and OpenStreetMap (OSM) standard cartographic basemaps.</li>
   <li><strong>Contour Extent Visualization:</strong> The valid dataset area (&sim; 8.3&thinsp;km<sup>2</sup>) is highlighted with an emerald dashed boundary and informational tooltip.</li>
   <li><strong>Interactive Drag Land Selection:</strong> Clicking <em>"Select Land Area"</em> activates crosshair mode. During drag, a live HUD calculates selection dimensions (<i>W</i> &times; <i>H</i> in meters, area in hectares) in real time.</li>
   <li><strong>Boundary & Limit Guardrails:</strong> Selections outside the contour bounds or smaller than 50&thinsp;m &times; 50&thinsp;m turn red and are cleanly rejected on release. Partial overlaps are clamped to the valid dataset border.</li>
@@ -719,6 +740,16 @@ The web interface features a full-screen Leaflet.js canvas integrated with a gla
   <li><strong>Hydrological Control Sliders:</strong> Sliders for Runoff Coefficient (<i>C</i>) and DEM Resolution allow instant re-calculation.</li>
   <li><strong>Export Engine:</strong> A one-click button exports the entire result set as a standard GeoJSON <code>FeatureCollection</code>.</li>
 </ul>
+
+<div class="figure-img-box">
+  <img src="figures/fig_overview.jpg" alt="Web GIS Dashboard Overview">
+  <div class="figure-caption">Figure 2: Full-screen Web GIS dashboard interface showing the preloaded village contour survey extent (dashed green box), a user-selected agricultural land area (dashed cyan box), the delineated upstream watershed catchment polygon, the suggested pond location marker, and real-time hydrological analysis KPI telemetry cards.</div>
+</div>
+
+<div class="figure-img-box">
+  <img src="figures/fig_catchment_zoom.png" alt="Catchment Delineation Zoom View">
+  <div class="figure-caption">Figure 3: Close-up satellite view of the delineated micro-watershed catchment polygon (cyan boundary) and optimal pond depression site marker (pulsing pin) situated in the natural drainage convergence zone.</div>
+</div>
 
 <h3>5.3 Database and Storage Architecture</h3>
 <p class="no-indent">

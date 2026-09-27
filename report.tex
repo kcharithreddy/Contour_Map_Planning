@@ -285,7 +285,7 @@ The backend service is implemented in FastAPI. Endpoints are strictly typed with
 \subsection{Frontend and Visualization}
 The web interface features a full-screen Leaflet.js canvas integrated with a glassmorphic sidebar dashboard:
 \begin{itemize}
-    \item \textbf{Basemap Toggle:} Seamless switching between high-resolution Esri World Imagery (Satellite) and CartoDB Voyager.
+    \item \textbf{Basemap Toggle:} Seamless switching between high-resolution Esri World Imagery (Satellite) and OpenStreetMap (OSM) standard cartographic basemaps.
     \item \textbf{Contour Extent Visualization:} The valid dataset area ($\sim 8.3\,\text{km}^2$) is highlighted with an emerald dashed boundary and informational tooltip.
     \item \textbf{Interactive Drag Land Selection:} Clicking \emph{"Select Land Area"} activates crosshair mode. During drag, a live HUD calculates selection dimensions ($W \times H$ in meters, area in hectares) in real time.
     \item \textbf{Boundary \& Limit Guardrails:} Selections outside the contour bounds or smaller than $50\,\text{m} \times 50\,\text{m}$ turn red and are cleanly rejected on release. Partial overlaps are clamped to the valid dataset border.
@@ -293,6 +293,20 @@ The web interface features a full-screen Leaflet.js canvas integrated with a gla
     \item \textbf{Hydrological Control Sliders:} Sliders for Runoff Coefficient ($C$) and DEM Resolution allow instant re-calculation.
     \item \textbf{Export Engine:} A one-click button exports the entire result set as a standard GeoJSON \texttt{FeatureCollection}.
 \end{itemize}
+
+\begin{figure*}[ht]
+\centering
+\includegraphics[width=0.95\textwidth]{figures/fig_overview.jpg}
+\caption{Full-screen Web GIS dashboard interface showing the preloaded village contour survey extent (dashed green box), a user-selected agricultural land area (dashed cyan box), the delineated upstream watershed catchment polygon, the suggested pond location marker, and real-time hydrological analysis KPI telemetry cards.}
+\label{fig:dashboard_overview}
+\end{figure*}
+
+\begin{figure*}[ht]
+\centering
+\includegraphics[width=0.90\textwidth]{figures/fig_catchment_zoom.png}
+\caption{Close-up satellite view of the delineated micro-watershed catchment polygon (cyan boundary) and optimal pond depression site marker (pulsing pin) situated in the natural drainage convergence zone.}
+\label{fig:catchment_zoom}
+\end{figure*}
 
 \subsection{Database and Storage Architecture}
 Because contour datasets represent spatial vector geometries that require fast sub-second analysis, the system avoids relational database query overhead. The preloaded contour dataset (\texttt{contours\_1m (1).kml}) is parsed once on server startup into an in-memory \texttt{ContourDataset} object and cached in RAM ($\sim 45\,\text{MB}$). Subsequent sub-area queries execute linear spatial filtering in under $50\,\text{ms}$, eliminating database round-trip latency.

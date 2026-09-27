@@ -81,12 +81,12 @@ function initMap() {
         }
     );
 
-    // CartoDB Voyager (Street / Topo)
+    // OpenStreetMap Standard (Clean, Keyless, No Watermarks)
     state.layers.osm = L.tileLayer(
-        'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
         {
             maxZoom: 19,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }
     );
 
