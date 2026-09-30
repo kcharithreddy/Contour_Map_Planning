@@ -1,5 +1,5 @@
 %%
-%% CSD Assignment 1 - Final Technical Report
+%% CSD Assignment 1 - Final Technical Report Template
 %% Based on the ACM "acmart" manuscript (single-column) style.
 %%
 \documentclass[manuscript,screen,review]{acmart}
@@ -16,7 +16,7 @@
   \providecommand\BibTeX{{Bib\TeX}}}
 
 %% ------------------------------------------------------------------
-%% Rights-management / Conference info
+%% Rights-management / Conference info (Assignment Report)
 %% ------------------------------------------------------------------
 \setcopyright{none}
 \settopmatter{printacmref=false}
@@ -26,19 +26,17 @@
 \begin{document}
 
 %% =================== TITLE & AUTHOR BLOCK =========================
-\title{AI-Based Village Pond Planning \& Catchment Analysis System}
-\subtitle{CS559: Computer Systems Design --- Assignment 1 Phase 3 Final Technical Report}
+\title{AI-based Village Pond Planning System}
+\subtitle{CSD Assignment 1 -- Final Technical Report}
 
 \author{Kakarla Soma Charith Reddy}
 \authornote{Student ID: 12341040}
 \affiliation{%
-  \institution{Department of Computer Science and Engineering}
-  \department{Indian Institute of Technology Bhilai}
+  \institution{Department of Computer Science and Engineering, Indian Institute of Technology Bhilai}
   \city{Durg}
   \state{Chhattisgarh}
   \country{India}}
 \email{kakarlac@iitbhilai.ac.in}
-%% Student ID: 12341040
 
 \renewcommand{\shortauthors}{K.~S.~C.~Reddy}
 
@@ -47,7 +45,8 @@
 Efficient rainwater harvesting in rural topography is heavily constrained by the high cost and latency of manual civil land surveys, as well as the absence of localized hydrological modeling tools. In this project, we design, implement, and evaluate an automated, memory-efficient \emph{AI-Based Village Pond Planning and Catchment Analysis System} engineered to operate reliably on resource-constrained compute nodes (512\,MB RAM, 1 vCPU, 1.5\,GB disk). The system provides a pure-Python hydrological processing pipeline that consumes raw 3D contour maps (KML/KMZ), transforms geographic coordinates to metric Universal Transverse Mercator projections (UTM Zone 44N), constructs regularized Digital Elevation Model (DEM) rasters via irregular scattered interpolation, eliminates artificial sinks using priority-flood depression filling, and computes D8 steepest-descent flow direction routing. The delineated watershed catchment is paired with dynamically queried precipitation data from the Open-Meteo Historical Archive to estimate harvestable runoff volume using the Rational Runoff formula ($V = P \times A \times C$) and dimension an engineered trapezoidal farm pond. An interactive Web GIS front-end built on Leaflet.js provides dual satellite/street basemaps, click-and-drag bounding box land selection with real-time dimension telemetry HUD, strict contour boundary clamping, and GeoJSON overlays of the watershed boundary and animated pond outlet pin. Evaluated on a 6.7\,MB survey dataset comprising 2,710 contour lines across 8.3\,km$^2$ in Chhattisgarh, the system identifies an optimal pond site at $21.2444^\circ\text{ N}, 81.2910^\circ\text{ E}$, yielding a 1.56\,ha catchment and $7,612.8\,\text{m}^3$ annual water harvest in 1.2\,seconds. A resilient multi-port supervisor daemon ensures fault-tolerant operation across distributed nodes, validated by a comprehensive 33-test automated verification suite.
 \end{abstract}
 
-\keywords{Village Pond Planning, Digital Elevation Model (DEM), D8 Flow Routing, Watershed Catchment Delineation, Rainwater Harvesting, Web GIS, FastAPI}
+\keywords{Village Pond Planning, Geospatial Analysis, Rainwater
+  Harvesting, Catchment Estimation, Web GIS, REST APIs}
 
 \maketitle
 
@@ -90,23 +89,21 @@ The objective of this assignment is to develop an end-to-end, high-performance w
 
 Table~\ref{tab:requirements} maps each mandatory requirement to its concrete system implementation.
 
-\begin{table}[ht]
+\begin{table}[h]
   \caption{Functional requirements and where they are implemented}
   \label{tab:requirements}
   \begin{tabular}{p{5.5cm}p{7.5cm}}
     \toprule
-    \textbf{Functional Requirement} & \textbf{Implemented Module / Component} \\
+    Requirement & Implemented in \\
     \midrule
-    Satellite imagery display & \texttt{app/static/index.html}, \texttt{app.js} (Esri World Imagery + CartoDB) \\
+    Satellite imagery display & \texttt{app/static/index.html}, \texttt{app.js} (Esri World Imagery + OpenStreetMap) \\
     Contour map visualization & \texttt{app/static/app.js} (Preloaded region polygon \& tooltip overlay) \\
-    Available-land area selection & \texttt{app/static/app.js} (Bounding box drag tool), \texttt{app/parser.py} \\
-    Contour boundary \& limit enforcement & \texttt{app/main.py} (\texttt{/analyzeArea}), \texttt{app/static/app.js} \\
+    Available-land identification & \texttt{app/static/app.js} (Bounding box drag tool), \texttt{app/parser.py} \\
     Catchment area estimation & \texttt{app/pond.py} (\texttt{select\_pond\_and\_delineate\_catchment}) \\
     Historical rainfall query & \texttt{app/hydrology.py} (\texttt{fetch\_rainfall\_data} via Open-Meteo) \\
     Runoff volume estimation & \texttt{app/hydrology.py} (\texttt{calculate\_water\_volume\_and\_sizing}) \\
     Pond depth / storage recommendation & \texttt{app/hydrology.py} (\texttt{PondDimensions}, trapezoidal section) \\
     Combined overlay / results view & \texttt{app/static/index.html}, \texttt{app.js} (GeoJSON polygon, ripple pin, KPI HUD) \\
-    GeoJSON export capability & \texttt{app/static/app.js} (\texttt{FeatureCollection} download) \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -184,7 +181,7 @@ The application is structured as a decoupled, modular monolith following clean a
 \draw[arr] (l3) -- (l4);
 
 \end{tikzpicture}
-\caption{End-to-end layered system architecture of the AI Pond Planning System.}
+\caption{High-level system architecture of the AI Pond Planning System.}
 \label{fig:architecture}
 \end{figure*}
 
@@ -205,7 +202,7 @@ The complete technology stack is enumerated and justified in Table~\ref{tab:tech
     Terrain Analytics & NumPy array vectorized math & Pure array vectorized flow routing; avoids GDAL/QGIS C-binding overhead and memory leaks. \\
     Spatial Geometry & Shapely 2.0 & Unary union and polygonal simplification for converting raster catchment cells into clean GeoJSON boundaries. \\
     Frontend Mapping & Leaflet.js 1.9.4 & Lightweight client-side GIS library; smooth vector rendering, tile caching, and minimal footprint. \\
-    Tile Providers & Esri World Imagery \& CartoDB & High-resolution satellite tiles and high-contrast cartographic basemaps without requiring API keys. \\
+    Tile Providers & Esri World Imagery \& OpenStreetMap & High-resolution satellite tiles and clean cartographic basemaps without requiring API keys. \\
     Rainfall Integration & Open-Meteo Archive API & Free, keyless historical weather API with automatic fallback to Central India regional baseline (1,220\,mm). \\
     Process Supervision & POSIX Shell + \texttt{setsid} & Background supervisor running dual redundant worker instances on ports 3245 and 3000 with sub-2s auto-restart. \\
     \bottomrule
@@ -254,20 +251,14 @@ Once the outlet $(r^*, c^*)$ is established, upstream catchment delineation exec
 \end{equation}
 The raster cells of $\mathcal{W}$ are converted into individual metric box polygons and merged via Shapely's \texttt{unary\_union}. The resulting boundary polygon is projected back to WGS84 GeoJSON.
 
-\subsection{Rainfall and Runoff Modeling}
+\subsection{Rainfall Data Integration}
 Annual rainfall $P$ is queried from the Open-Meteo Historical Archive API for the specific pond coordinates, with graceful fallback to the Central India agrometeorological standard ($1,220\,\text{mm} = 1.22\,\text{m}$).
 
 Surface water runoff volume $V$ is estimated using the classical Rational Runoff Equation:
 \begin{equation}
     V = P \times A_{\text{catchment}} \times C
 \end{equation}
-where:
-\begin{itemize}
-    \item $V$: Total expected runoff volume in $\text{m}^3$ (and liters where $1\,\text{m}^3 = 1,000\,\text{L}$).
-    \item $P$: Annual rainfall in meters ($1.22\,\text{m}$).
-    \item $A_{\text{catchment}}$: Delineated drainage area in $\text{m}^2$.
-    \item $C$: Dimensionless runoff coefficient ($0.10 \le C \le 0.80$; default $C = 0.40$ representing agricultural loam soil with moderate permeability).
-\end{itemize}
+where $V$ is harvestable volume in $\text{m}^3$, $P$ is annual precipitation in meters, $A_{\text{catchment}}$ is drainage area in $\text{m}^2$, and $C = 0.40$ is the runoff coefficient for agricultural loam soil.
 
 \subsection{Farm Pond Sizing and Dimensioning}
 Standard Indian agrarian guidelines specify that farm ponds should be sized to harvest approximately $30\%$ of total seasonal catchment runoff (preventing excessive land footprint and sediment accumulation), with a minimum capacity of $150\,\text{m}^3$:
@@ -314,23 +305,23 @@ The web interface features a full-screen Leaflet.js canvas integrated with a gla
     \item \textbf{Hydrological Control Sliders:} Sliders for Runoff Coefficient ($C$) and DEM Resolution allow instant re-calculation.
     \item \textbf{Export Engine:} A one-click button exports the entire result set as a standard GeoJSON \texttt{FeatureCollection}.
 \end{itemize}
-Figure~\ref{fig:dashboard_overview} illustrates the full Web GIS dashboard overview with telemetry cards and boundary overlays, while Figure~\ref{fig:catchment_zoom} shows a high-resolution zoom of the delineated watershed boundary and pond placement marker.
+Figure~\ref{fig:ui} illustrates the full Web GIS dashboard overview with telemetry cards and boundary overlays, while Figure~\ref{fig:results} shows a high-resolution zoom of the delineated watershed boundary and pond placement marker.
 
 \begin{figure*}[ht]
 \centering
 \includegraphics[width=0.95\textwidth]{figures/fig_overview.jpg}
-\caption{Full-screen Web GIS dashboard interface showing the preloaded village contour survey extent (dashed green box), a user-selected agricultural land area (dashed cyan box), the delineated upstream watershed catchment polygon, the suggested pond location marker, and real-time hydrological analysis KPI telemetry cards.}
-\label{fig:dashboard_overview}
+\caption{Application interface showing the results overlay, user-selected land boundary, delineated catchment polygon, optimal pond placement pin, and real-time telemetry cards.}
+\label{fig:ui}
 \end{figure*}
 
 \begin{figure*}[ht]
 \centering
 \includegraphics[width=0.90\textwidth]{figures/fig_catchment_zoom.png}
-\caption{Close-up satellite view of the delineated micro-watershed catchment polygon (cyan boundary) and optimal pond depression site marker (pulsing pin) situated in the natural drainage convergence zone.}
-\label{fig:catchment_zoom}
+\caption{Example results overlay for a selected village terrain showing the delineated micro-watershed catchment polygon and pulsing pond marker.}
+\label{fig:results}
 \end{figure*}
 
-\subsection{Database and Storage Architecture}
+\subsection{Database and Storage}
 Because contour datasets represent spatial vector geometries that require fast sub-second analysis, the system avoids relational database query overhead. The preloaded contour dataset (\texttt{contours\_1m (1).kml}) is parsed once on server startup into an in-memory \texttt{ContourDataset} object and cached in RAM ($\sim 45\,\text{MB}$). Subsequent sub-area queries execute linear spatial filtering in under $50\,\text{ms}$, eliminating database round-trip latency.
 
 %% =====================================================================
@@ -339,26 +330,25 @@ Because contour datasets represent spatial vector geometries that require fast s
 The project incorporates multiple fundamental principles of Computer Systems Design (CSD). Table~\ref{tab:csd-themes} provides a comprehensive mapping of CSD themes to concrete project components and engineering justifications.
 
 \begin{table*}[t]
-  \caption{Mapping of core CSD themes and topics to their concrete implementation in this project}
+  \caption{Mapping of core CSD themes/topics to their use in this project}
   \label{tab:csd-themes}
-  \small
   \begin{tabular}{p{3.2cm}p{4.8cm}p{6.8cm}}
     \toprule
-    \textbf{CSD Theme / Topic} & \textbf{Where used in the project} & \textbf{Justification / Engineering Design Rationale} \\
+    \textbf{CSD Theme/Topic} & \textbf{Where used in the project} & \textbf{Justification / design rationale} \\
     \midrule
-    \textbf{REST API Design} & FastAPI endpoints (\texttt{/analyzeArea}, \texttt{/analyzeContour}, \texttt{/health}) & Standardized HTTP verb semantics, clear Pydantic request/response contracts, and automatic OpenAPI 3.0 schema generation. \\
-    \textbf{Process Redundancy / Failover} & Dual supervisor daemon ports (3245 and 3000) & Runs two independent Uvicorn workers on ports 3245 and 3000 under a background supervisor daemon that automatically restarts any failed worker within 2 seconds, ensuring continuous service availability without requiring external load balancers or proxy layers. \\
-    \textbf{In-Memory Caching} & Startup caching of \texttt{ContourDataset} and dataset bounds & Eliminates redundant 6.7\,MB XML disk I/O and parsing overhead, reducing sub-area query latency from 8.5\,s to 1.2\,s. \\
-    \textbf{Spatial Indexing \& Clipping} & \texttt{filter\_dataset\_by\_bounds} in \texttt{app/parser.py} & Filters polylines to user bounding box prior to DEM interpolation, reducing grid size by up to $85\%$ and speeding up flow routing. \\
-    \textbf{Concurrency \& Async I/O} & FastAPI async request handlers and non-blocking file streaming & Prevents blocking the event loop during large multi-part file uploads and concurrent client map interactions. \\
-    \textbf{Microservices vs. Monolith} & Modular monolith architecture across 5 decoupled modules & Eliminates inter-process RPC network serialization latency, which is critical for remaining strictly within the 512\,MB RAM budget. \\
-    \textbf{Design Patterns} & Strategy pattern in \texttt{hydrology.py}; Pipeline pattern in terrain analysis & Enables pluggable runoff equations and decoupled step-by-step transformation: Parse $\rightarrow$ DEM $\rightarrow$ Terrain $\rightarrow$ Pond. \\
-    \textbf{Resource Constrained Design} & Dynamic auto-coarsening DEM resolution ($N_{\text{cells}} \le 250,000$) & Prevents Out-Of-Memory (OOM) operating system kills on 512\,MB RAM VMs when processing dense, fine-interval contour maps. \\
-    \textbf{Process Supervision \& Daemon} & POSIX \texttt{setsid} background supervisor script (\texttt{start\_daemon.sh}) & Ensures high availability; detached background execution independent of SSH sessions, auto-restarting crashed workers in 2\,s. \\
-    \textbf{Error Handling \& Resilience} & Graceful weather fallback and bounds validation & Falls back to regional precipitation baseline if Open-Meteo is unreachable; returns informative HTTP 400 diagnostics for invalid selections. \\
-    \textbf{Algorithmic Complexity} & Priority-Flood ($O(N \log N)$), D8 flow routing ($O(N)$), reverse queue ($O(K)$) & Selected near-linear time graph traversal algorithms over expensive quadratic distance matrices, ensuring sub-second execution. \\
-    \textbf{Automated Testing Strategy} & 33-test pytest suite (\texttt{tests/test\_*.py}) & Validates unit, integration, boundary rejection, and golden numerical benchmarks, guaranteeing regression safety. \\
-    \textbf{Version Control \& CI/CD} & Git repository synced with GitHub remote (\texttt{main} branch) & Version-controlled codebase enabling multi-environment deployment via SSH automation scripts (\texttt{deploy.py}). \\
+    API Design (REST) & FastAPI endpoints (\texttt{/analyzeArea}, \texttt{/analyzeContour}, \texttt{/health}) & Standardized HTTP verb semantics, clear Pydantic request/response contracts, and automatic OpenAPI 3.0 schema generation. \\
+    Process Redundancy / Failover & Dual supervisor daemon ports (3245 and 3000) & Runs two independent Uvicorn workers on ports 3245 and 3000 under a background supervisor daemon that automatically restarts any failed worker within 2 seconds, ensuring continuous service availability without requiring external load balancers or proxy layers. \\
+    Caching & Startup caching of \texttt{ContourDataset} and dataset bounds & Eliminates redundant 6.7\,MB XML disk I/O and parsing overhead, reducing sub-area query latency from 8.5\,s to 1.2\,s. \\
+    Spatial Indexing \& Clipping & \texttt{filter\_dataset\_by\_bounds} in \texttt{app/parser.py} & Filters polylines to user bounding box prior to DEM interpolation, reducing grid size by up to $85\%$ and speeding up flow routing. \\
+    Concurrency \& Async I/O & FastAPI async request handlers and non-blocking file streaming & Prevents blocking the event loop during large multi-part file uploads and concurrent client map interactions. \\
+    Microservices vs. Monolith & Modular monolith architecture across 5 decoupled modules & Eliminates inter-process RPC network serialization latency, which is critical for remaining strictly within the 512\,MB RAM budget. \\
+    Design Patterns & Strategy pattern in \texttt{hydrology.py}; Pipeline pattern in terrain analysis & Enables pluggable runoff equations and decoupled step-by-step transformation: Parse $\rightarrow$ DEM $\rightarrow$ Terrain $\rightarrow$ Pond. \\
+    Resource Constrained Design & Dynamic auto-coarsening DEM resolution ($N_{\text{cells}} \le 250,000$) & Prevents Out-Of-Memory (OOM) operating system kills on 512\,MB RAM VMs when processing dense, fine-interval contour maps. \\
+    Process Supervision \& Daemon & POSIX \texttt{setsid} background supervisor script (\texttt{start\_daemon.sh}) & Ensures high availability; detached background execution independent of SSH sessions, auto-restarting crashed workers in 2\,s. \\
+    Error Handling and Resilience & Graceful weather fallback and bounds validation & Falls back to regional precipitation baseline if Open-Meteo is unreachable; returns informative HTTP 400 diagnostics for invalid selections. \\
+    Algorithms and Complexity & Priority-Flood ($O(N \log N)$), D8 flow routing ($O(N)$), reverse queue ($O(K)$) & Selected near-linear time graph traversal algorithms over expensive quadratic distance matrices, ensuring sub-second execution. \\
+    Testing Strategy & 33-test pytest suite (\texttt{tests/test\_*.py}) & Validates unit, integration, boundary rejection, and golden numerical benchmarks, guaranteeing regression safety. \\
+    Version Control / CI-CD & Git repository synced with GitHub remote (\texttt{main} branch) & Version-controlled codebase enabling multi-environment deployment via SSH automation scripts (\texttt{deploy.py}). \\
     \bottomrule
   \end{tabular}
 \end{table*}
@@ -406,7 +396,7 @@ Table~\ref{tab:results} summarizes the analytical results comparing a full-villa
   \end{tabular}
 \end{table}
 
-\subsection{Performance and Stress Benchmarks}
+\subsection{Performance}
 Performance was benchmarked under stress on a Linux VM limited to 512\,MB RAM and 1 vCPU:
 \begin{itemize}
     \item \textbf{Peak Memory Footprint:} 168\,MB RSS during Delaunay scattered interpolation; 82\,MB steady-state. Zero out-of-memory errors occurred across 100 consecutive requests.
@@ -439,7 +429,7 @@ In compliance with the assignment's LLM and AI Tool Usage Policy:
 %% =====================================================================
 \appendix
 
-\section{Source Code, Video Demonstration, and Deployment}
+\section{Source Code and Repository}
 The complete, version-controlled source code, video demonstration, and live deployment for this project are publicly available:
 \begin{itemize}
     \item \textbf{GitHub Repository:} \url{https://github.com/kcharithreddy/Contour_Map_Planning}
@@ -470,6 +460,7 @@ contourmao/
 │   ├── test_parser.py    # KML stream parsing & error handling tests
 │   ├── test_pond.py      # Catchment delineation & outlet selection tests
 │   └── test_terrain.py   # Depression filling & D8 slope calculation tests
+├── figures/              # Embedded high-resolution website and catchment screenshots
 ├── contours_1m (1).kml   # Reference village 3D contour survey dataset (6.7 MB)
 ├── deploy.py             # Automated remote SSH/SFTP deployment & smoke-test script
 ├── requirements.txt      # Minimal pure-Python dependency specifications
@@ -494,7 +485,7 @@ contourmao/
     \end{verbatim}
     \item \textbf{Automated Test Suite:}
     \begin{verbatim}
-    pytest tests/ -v
+    pytest tests/ -v  # Validates all 33 unit and golden tests
     \end{verbatim}
 \end{enumerate}
 
