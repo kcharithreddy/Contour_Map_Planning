@@ -329,7 +329,7 @@
 <!-- ================= ABSTRACT ================= -->
 <div class="abstract-box">
   <strong class="label">Abstract &mdash; </strong>
-  Efficient rainwater harvesting in rural topography is heavily constrained by the high cost and latency of manual civil land surveys, as well as the absence of localized hydrological modeling tools. In this project, we design, implement, and evaluate an automated, memory-efficient <em>AI-Based Village Pond Planning and Catchment Analysis System</em> engineered to operate reliably on resource-constrained compute nodes (512&thinsp;MB RAM, 1 vCPU, 1.5&thinsp;GB disk). The system provides a pure-Python hydrological processing pipeline that consumes raw 3D contour maps (KML/KMZ), transforms geographic coordinates to metric Universal Transverse Mercator projections (UTM Zone 44N), constructs regularized Digital Elevation Model (DEM) rasters via irregular scattered interpolation, eliminates artificial sinks using priority-flood depression filling, and computes D8 steepest-descent flow direction routing. The delineated watershed catchment is paired with dynamically queried precipitation data from the Open-Meteo Historical Archive to estimate harvestable runoff volume using the Rational Runoff formula (<i>V</i> = <i>P</i> &times; <i>A</i> &times; <i>C</i>) and dimension an engineered trapezoidal farm pond. An interactive Web GIS front-end built on Leaflet.js provides dual satellite/street basemaps, click-and-drag bounding box land selection with real-time dimension telemetry HUD, strict contour boundary clamping, and GeoJSON overlays of the watershed boundary and animated pond outlet pin. Evaluated on a 6.7&thinsp;MB survey dataset comprising 2,710 contour lines across 8.3&thinsp;km<sup>2</sup> in Chhattisgarh, the system identifies an optimal pond site at 21.2444&deg;&thinsp;N, 81.2910&deg;&thinsp;E, yielding a 1.56&thinsp;ha catchment and 7,612.8&thinsp;m<sup>3</sup> annual water harvest in 1.2&thinsp;seconds. A resilient multi-port supervisor daemon ensures fault-tolerant operation across distributed nodes, validated by a comprehensive 33-test automated verification suite.
+  Efficient rainwater harvesting in rural topography is heavily constrained by the high cost and latency of manual civil land surveys, as well as the absence of localized hydrological modeling tools. In this project, we design, implement, and evaluate an automated, memory-efficient <em>AI-Based Village Pond Planning and Catchment Analysis System</em> engineered to operate reliably on resource-constrained compute nodes (512&thinsp;MB RAM, 1 vCPU, 1.5&thinsp;GB disk). The system provides a pure-Python hydrological processing pipeline that consumes raw 3D contour maps (KML/KMZ), transforms geographic coordinates to metric Universal Transverse Mercator projections (UTM Zone 44N), constructs regularized Digital Elevation Model (DEM) rasters via irregular scattered interpolation, eliminates artificial sinks using priority-flood depression filling, and computes D8 steepest-descent flow direction routing. The delineated watershed catchment is paired with dynamically queried precipitation data from the Open-Meteo Historical Archive to estimate harvestable runoff volume using the Rational Runoff formula (<i>V</i> = <i>P</i> &times; <i>A</i> &times; <i>C</i>) and dimension an engineered trapezoidal farm pond. An interactive Web GIS front-end built on Leaflet.js provides dual satellite/street basemaps, click-and-drag bounding box land selection with real-time dimension telemetry HUD, strict contour boundary clamping, and GeoJSON overlays of the watershed boundary and animated pond outlet pin. Evaluated on a 6.7&thinsp;MB survey dataset comprising 2,710 contour lines across 8.3&thinsp;km<sup>2</sup> in Chhattisgarh, the system identifies an optimal pond site at 21.25784&deg;&thinsp;N, 81.28880&deg;&thinsp;E for a user-selected sub-area, yielding a 0.76&thinsp;ha catchment and 3,708.8&thinsp;m<sup>3</sup> annual water harvest in 1.34&thinsp;seconds. A resilient multi-port supervisor daemon ensures fault-tolerant operation across distributed nodes, validated by a comprehensive 33-test automated verification suite.
 </div>
 
 <div class="keywords">
@@ -712,17 +712,17 @@ The backend service is implemented in FastAPI with Pydantic v2 validation. Table
 
 <h3>5.2 Frontend and Visualization</h3>
 <p class="no-indent">
-The web interface features a full-screen Leaflet.js canvas with satellite/OSM basemap toggles, interactive drag-to-select crosshair bounding tool, real-time dimensions HUD, boundary limit enforcement, pulsing pond marker, and one-click GeoJSON export. Figure 2 shows the full dashboard overview, and Figure 3 shows the close-up delineated watershed.
+The web interface features a full-screen Leaflet.js canvas with satellite/Carto/OSM basemap toggles, interactive drag-to-select crosshair bounding tool, real-time dimensions HUD, boundary limit enforcement, pulsing pond marker, and one-click GeoJSON export. Figure 2 shows the full dashboard with the contour-region extent, drawn selection box, and analysis cards (expected water volume 3,708.8&thinsp;m<sup>3</sup>, catchment 7,600&thinsp;m<sup>2</sup>, suggested pond site). Figure 3 shows the same analysis zoomed in on the selected land, with the delineated micro-watershed polygon and pond outlet marker.
 </p>
 
 <div class="figure-side-by-side">
   <div class="figure-col">
-    <img src="figures/fig_overview.jpg" alt="Web GIS Dashboard Overview">
-    <div class="figure-caption">Figure 2: Full-screen Web GIS dashboard overview with village boundary, ROI selection, and KPI cards.</div>
+    <img src="figures/fig_overview.jpg" alt="Full dashboard: contour-region extent, drawn selection box, and analysis cards.">
+    <div class="figure-caption">Figure 2: Full dashboard: contour-region extent, drawn selection box, and analysis cards.</div>
   </div>
   <div class="figure-col">
-    <img src="figures/fig_catchment_zoom.png" alt="Catchment Delineation Zoom View">
-    <div class="figure-caption">Figure 3: Satellite close-up of delineated watershed catchment polygon and optimal pond outlet pin.</div>
+    <img src="figures/fig_catchment_zoom.jpg" alt="Zoomed view: delineated catchment polygon and pond outlet marker.">
+    <div class="figure-caption">Figure 3: Zoomed view: delineated catchment polygon and pond outlet marker.</div>
   </div>
 </div>
 
@@ -839,9 +839,9 @@ The system was evaluated against the 6.7&thinsp;MB benchmark contour dataset (<c
   </thead>
   <tbody>
     <tr>
-      <td>Selected Area Bounding Box</td>
+      <td>Selected Area</td>
       <td>Full Extent (8.3&thinsp;km<sup>2</sup>)</td>
-      <td>[21.240, 81.285] to [21.250, 81.298]</td>
+      <td>Drawn selection box (Fig. 2)</td>
     </tr>
     <tr>
       <td>Contour Lines Processed</td>
@@ -856,22 +856,22 @@ The system was evaluated against the 6.7&thinsp;MB benchmark contour dataset (<c
     <tr>
       <td><strong>Optimal Pond Outlet Site</strong></td>
       <td><strong>21.2444&deg;&thinsp;N, 81.2910&deg;&thinsp;E</strong></td>
-      <td><strong>21.2444&deg;&thinsp;N, 81.2910&deg;&thinsp;E</strong></td>
+      <td><strong>21.25784&deg;&thinsp;N, 81.28880&deg;&thinsp;E</strong></td>
     </tr>
     <tr>
-      <td>Pond Site Elevation</td>
+      <td>Pond Site (Outlet) Elevation</td>
       <td>275.0&thinsp;m</td>
-      <td>275.0&thinsp;m</td>
+      <td>279.0&thinsp;m</td>
     </tr>
     <tr>
       <td>Draining Flow Cells</td>
       <td>166 cells</td>
-      <td>156 cells</td>
+      <td>76 cells</td>
     </tr>
     <tr>
       <td><strong>Catchment Area</strong></td>
       <td><strong>16,600&thinsp;m<sup>2</sup> (1.66&thinsp;ha)</strong></td>
-      <td><strong>15,600&thinsp;m<sup>2</sup> (1.56&thinsp;ha)</strong></td>
+      <td><strong>7,600&thinsp;m<sup>2</sup> (0.76&thinsp;ha)</strong></td>
     </tr>
     <tr>
       <td>Terrain Mean Slope</td>
@@ -901,7 +901,7 @@ The system was evaluated against the 6.7&thinsp;MB benchmark contour dataset (<c
     <tr>
       <td><strong>Expected Water Volume (<i>V</i>)</strong></td>
       <td><strong>8,100.8&thinsp;m<sup>3</sup> (8.10&thinsp;ML)</strong></td>
-      <td><strong>7,612.8&thinsp;m<sup>3</sup> (7.61&thinsp;ML)</strong></td>
+      <td><strong>3,708.8&thinsp;m<sup>3</sup> (3.71&thinsp;ML)</strong></td>
     </tr>
     <tr>
       <td>Recommended Pond Depth</td>
@@ -911,17 +911,17 @@ The system was evaluated against the 6.7&thinsp;MB benchmark contour dataset (<c
     <tr>
       <td>Top Surface Area</td>
       <td>1,012.6&thinsp;m<sup>2</sup></td>
-      <td>951.6&thinsp;m<sup>2</sup></td>
+      <td>463.6&thinsp;m<sup>2</sup></td>
     </tr>
     <tr>
       <td>Engineered Storage Capacity</td>
       <td>2,430.2&thinsp;m<sup>3</sup></td>
-      <td>2,283.8&thinsp;m<sup>3</sup></td>
+      <td>1,112.6&thinsp;m<sup>3</sup></td>
     </tr>
     <tr>
       <td><strong>Processing Latency</strong></td>
       <td><strong>4,820&thinsp;ms</strong></td>
-      <td><strong>1,215&thinsp;ms</strong></td>
+      <td><strong>1,336&thinsp;ms</strong></td>
     </tr>
   </tbody>
 </table>
@@ -929,7 +929,7 @@ The system was evaluated against the 6.7&thinsp;MB benchmark contour dataset (<c
 <h3>7.1 Performance and Stress Benchmarks</h3>
 <ul>
   <li><strong>Peak Memory Footprint:</strong> 168&thinsp;MB RSS during Delaunay scattered interpolation; 82&thinsp;MB steady-state. Zero out-of-memory errors occurred across 100 consecutive requests.</li>
-  <li><strong>Sub-Area Selection Latency:</strong> Average response time of 1,215&thinsp;ms, representing a 75% reduction in processing time compared to full-map queries.</li>
+  <li><strong>Sub-Area Selection Latency:</strong> About 1.2&ndash;1.3&thinsp;s per request (1,336&thinsp;ms for the run in Fig. 2), roughly a 70&ndash;75% reduction versus full-map queries.</li>
   <li><strong>Automated Test Coverage:</strong> 33 automated tests executed via <code>pytest</code> completed in 23.33&thinsp;seconds with a 100% pass rate, covering API contracts, DEM coarsening, depression filling, D8 slope vectors, boundary rejections, and minimum-area limits.</li>
 </ul>
 
