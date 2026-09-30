@@ -134,7 +134,7 @@ The application is a decoupled, modular monolith following clean architecture pr
 \node[pipebox, left=0.3cm of p3] (p2) {DEM Grid\\PyProj + SciPy};
 \node[pipebox, left=0.3cm of p2] (p1) {Parser (lxml)\\Stream \& Clip};
 \node[pipebox, right=0.3cm of p3] (p4) {Pond \& Catchment\\Depression + Queue};
-\node[pipebox, right=0.3cm of p4] (p5) {Hydrology Engine\\$V = P \times A \times C$};
+\node[pipebox, right=0.3cm of p4] (p5) {Hydrology Engine\\ $V = P \times A \times C$};
 \draw[pipearr] (p1) -- (p2);
 \draw[pipearr] (p2) -- (p3);
 \draw[pipearr] (p3) -- (p4);
@@ -216,7 +216,7 @@ Annual rainfall $P$ is queried from the Open-Meteo Historical Archive for the po
 \begin{equation}
     V = P \times A_{\text{catchment}} \times C
 \end{equation}
-where $V$ is harvestable volume (m$^3$), $P$ annual precipitation (m), $A_{\text{catchment}}$ drainage area (m$^2$), and $C = 0.40$ the runoff coefficient for agricultural loam soil.
+where $V$ is harvestable volume ($\text{m}^3$), $P$ annual precipitation (m), $A_{\text{catchment}}$ drainage area ($\text{m}^2$), and $C = 0.40$ the runoff coefficient for agricultural loam soil.
 
 \subsection{Farm Pond Sizing and Dimensioning}
 Indian agrarian guidelines size farm ponds to harvest about $30\%$ of seasonal catchment runoff, with a minimum capacity of $150\,\text{m}^3$:
