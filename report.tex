@@ -272,16 +272,20 @@ Figure~\ref{fig:ui} shows the full dashboard with the contour-region boundary, t
 \IfFileExists{figures/fig_overview.jpg}{%
   \includegraphics[width=\linewidth]{figures/fig_overview.jpg}%
 }{%
-  \begin{tikzpicture}
-    \node[draw=blue!60, fill=blue!4, rounded corners=4pt, line width=0.8pt, minimum width=0.98\linewidth, minimum height=5.2cm, align=center, inner sep=10pt] {
-      \textbf{Full Dashboard Overview UI}\\[8pt]
-      \footnotesize (Upload \texttt{figures/fig\_overview.jpg} to Overleaf to display screenshot)\\[10pt]
-      \scriptsize \textbf{Contour Extent:} $[21.2398^\circ, 81.2814^\circ]$ to $[21.2636^\circ, 81.3126^\circ]$\\
-      \scriptsize \textbf{Selected Area:} 76 Flow Cells ($7{,}600\,\text{m}^2 = 0.76\,\text{ha}$)\\
-      \scriptsize \textbf{Optimal Pond Site:} $21.25784^\circ\text{ N}, 81.28880^\circ\text{ E}$ ($279.0\,\text{m}$ elev)\\
-      \scriptsize \textbf{Expected Water Volume:} $\mathbf{3{,}708.8\,\text{m}^3}$ ($3.71\,\text{ML}$)
-    };
-  \end{tikzpicture}%
+  \IfFileExists{fig_overview.jpg}{%
+    \includegraphics[width=\linewidth]{fig_overview.jpg}%
+  }{%
+    \begin{tikzpicture}
+      \node[draw=blue!60, fill=blue!4, rounded corners=4pt, line width=0.8pt, minimum width=0.98\linewidth, minimum height=5.2cm, align=center, inner sep=10pt] {
+        \textbf{Full Dashboard Overview UI}\\[8pt]
+        \footnotesize (Upload \texttt{fig\_overview.jpg} to Overleaf to display screenshot)\\[10pt]
+        \scriptsize \textbf{Contour Extent:} $[21.2398^\circ, 81.2814^\circ]$ to $[21.2636^\circ, 81.3126^\circ]$\\
+        \scriptsize \textbf{Selected Area:} 76 Flow Cells ($7{,}600\,\text{m}^2 = 0.76\,\text{ha}$)\\
+        \scriptsize \textbf{Optimal Pond Site:} $21.25784^\circ\text{ N}, 81.28880^\circ\text{ E}$ ($279.0\,\text{m}$ elev)\\
+        \scriptsize \textbf{Expected Water Volume:} $\mathbf{3{,}708.8\,\text{m}^3}$ ($3.71\,\text{ML}$)
+      };
+    \end{tikzpicture}%
+  }%
 }
 \caption{Full dashboard: contour-region extent, drawn selection box, and analysis cards.}
 \label{fig:ui}
@@ -291,16 +295,20 @@ Figure~\ref{fig:ui} shows the full dashboard with the contour-region boundary, t
 \IfFileExists{figures/fig_catchment_zoom.jpg}{%
   \includegraphics[width=\linewidth]{figures/fig_catchment_zoom.jpg}%
 }{%
-  \begin{tikzpicture}
-    \node[draw=teal!60, fill=teal!4, rounded corners=4pt, line width=0.8pt, minimum width=0.98\linewidth, minimum height=5.2cm, align=center, inner sep=10pt] {
-      \textbf{Zoomed Catchment \& Pond Site UI}\\[8pt]
-      \footnotesize (Upload \texttt{figures/fig\_catchment\_zoom.jpg} to Overleaf to display screenshot)\\[10pt]
-      \scriptsize \textbf{Delineated Basin:} 76 connected drainage raster cells\\
-      \scriptsize \textbf{Outlet Elevation:} $279.0\,\text{m}$ ($6.0\,\text{m}$ relief)\\
-      \scriptsize \textbf{Engineered Capacity:} $1{,}112.6\,\text{m}^3$ ($3.0\,\text{m}$ depth, $1.5:1$ slope)\\
-      \scriptsize \textbf{GeoJSON Overlay:} Exportable \texttt{FeatureCollection}
-    };
-  \end{tikzpicture}%
+  \IfFileExists{fig_catchment_zoom.jpg}{%
+    \includegraphics[width=\linewidth]{fig_catchment_zoom.jpg}%
+  }{%
+    \begin{tikzpicture}
+      \node[draw=teal!60, fill=teal!4, rounded corners=4pt, line width=0.8pt, minimum width=0.98\linewidth, minimum height=5.2cm, align=center, inner sep=10pt] {
+        \textbf{Zoomed Catchment \& Pond Site UI}\\[8pt]
+        \footnotesize (Upload \texttt{fig\_catchment\_zoom.jpg} to Overleaf to display screenshot)\\[10pt]
+        \scriptsize \textbf{Delineated Basin:} 76 connected drainage raster cells\\
+        \scriptsize \textbf{Outlet Elevation:} $279.0\,\text{m}$ ($6.0\,\text{m}$ relief)\\
+        \scriptsize \textbf{Engineered Capacity:} $1{,}112.6\,\text{m}^3$ ($3.0\,\text{m}$ depth, $1.5:1$ slope)\\
+        \scriptsize \textbf{GeoJSON Overlay:} Exportable \texttt{FeatureCollection}
+      };
+    \end{tikzpicture}%
+  }%
 }
 \caption{Zoomed view: delineated catchment polygon and pond outlet marker.}
 \label{fig:results}
